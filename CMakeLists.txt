@@ -48,6 +48,12 @@ message(STATUS "")
 # ---------------------------------------------------------------------------- #
 # BDD Packages
 
+# Aytdd Package (Mingtong Lin), a Lean library used through its C interface
+option(AYTDD "Build for Aytdd" ON)
+if (AYTDD)
+  add_subdirectory(external/aytdd aytdd EXCLUDE_FROM_ALL)
+endif (AYTDD)
+
 # Adiar Package (Steffan Sølvsten - Aarhus University, Denmark)
 option(ADIAR "Build for Adiar" ON)
 if (ADIAR)
@@ -107,8 +113,11 @@ endif (SYLVAN)
 # BLIF parser
 add_subdirectory (external/blifparse libblifparse EXCLUDE_FROM_ALL)
 
-# Boost
-find_package(Boost REQUIRED)
+# Boost, which only the mcnet benchmarks need
+option(MCNET "Build the mcnet benchmarks, which require Boost" ON)
+if (MCNET)
+  find_package(Boost REQUIRED)
+endif (MCNET)
 
 # XML parser
 add_subdirectory (external/pugixml pugixml EXCLUDE_FROM_ALL)
