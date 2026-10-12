@@ -72,6 +72,15 @@ packages.
   also not shareable between BDDs.
 
 
+- **Aytdd**:
+
+  An implementation of shared BDDs with complement edges in Lean 4, with
+  depth-first algorithms using a unique node table and memoization. Nodes are
+  never reclaimed.
+
+  We use its C interface, which is built in the Aytdd repository.
+
+
 - [**BuDDy**](https://buddy.sourceforge.net/manual/main.html)
   [[Lind-Nielsen1999](#references)]:
 
@@ -124,6 +133,26 @@ packages.
   depth-first on a unique node table and memoization.
 
 
+- [**Ruddy**](https://github.com/sybila/ruddy)
+  [[Pastva2023](#references)]:
+
+  A library with iterative algorithms whose unique node table is a trie local to
+  each parent node rather than a hash table. It has no computed table that
+  survives an operation, and no complement edges. Only its shared representation
+  is benchmarked.
+
+  We use the C FFI in `external/ruddy-ffi`, written for these benchmarks.
+
+
+- [**SimpleABC**](https://github.com/MyskYko/abc-bdd)
+  [[Miyasaka2019](#references)]:
+
+  The simple BDD package of a fork of ABC, with depth-first algorithms, a unique
+  node table and a direct-mapped cache of conjunctions. It has no reference
+  counts; the adapter drives its garbage collection from the roots the
+  benchmark still holds. Quantification has no memoization.
+
+
 - [**Sylvan**](https://github.com/trolando/sylvan)
   [[Dijk2016](#references)]:
 
@@ -131,22 +160,22 @@ packages.
   using a unique node table and memoization.
 
 
-|                    | **Adiar** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **Sylvan** |
-|--------------------|-----------|-----------|---------|----------|------------|-----------|------------|
-| **Language**       | C++       | C         | C       | C        | Rust       | Rust      | C          |
-|                    |           |           |         |          |            |           |            |
-| **BDD**            | ✓         | ✓         |         | (✓)      | ✓          | ✓         | (✓)        |
-| **BCDD**           |           |           | ✓       | ✓        |            | ✓         | ✓          |
-| **MTBDD**          |           |           |         | ✓        |            | ✓         | ✓          |
-| **ZDD**            | ✓         |           |         | ✓        |            | ✓         | ✓          |
-|                    |           |           |         |          |            |           |            |
-| **Thread Safe**    |           |           |         |          | ✓          | ✓         | ✓          |
-| **Multi-threaded** |           |           |         |          |            | ✓         | ✓          |
-|                    |           |           |         |          |            |           |            |
-| **Reordering**     |           | ✓         | ✓       | ✓        |            | (✓)       | (✓)        |
-|                    |           |           |         |          |            |           |            |
-| **Shared Nodes**   |           | ✓         | ✓       | ✓        |            | ✓         | ✓          |
-| **Ext. Memory**    | ✓         |           | ✓       |          |            |           |            |
+|                    | **Adiar** | **Aytdd** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **Ruddy** | **SimpleABC** | **Sylvan** |
+|--------------------|-----------|-----------|-----------|---------|----------|------------|-----------|-----------|---------------|------------|
+| **Language**       | C++       | Lean      | C         | C       | C        | Rust       | Rust      | Rust      | C             | C          |
+|                    |           |           |           |         |          |            |           |           |               |            |
+| **BDD**            | ✓         |           | ✓         |         | (✓)      | ✓          | ✓         | ✓         |               | (✓)        |
+| **BCDD**           |           | ✓         |           | ✓       | ✓        |            | ✓         |           | ✓             | ✓          |
+| **MTBDD**          |           |           |           |         | ✓        |            | ✓         |           |               | ✓          |
+| **ZDD**            | ✓         |           |           |         | ✓        |            | ✓         |           |               | ✓          |
+|                    |           |           |           |         |          |            |           |           |               |            |
+| **Thread Safe**    |           |           |           |         |          | ✓          | ✓         |           |               | ✓          |
+| **Multi-threaded** |           |           |           |         |          |            | ✓         |           |               | ✓          |
+|                    |           |           |           |         |          |            |           |           |               |            |
+| **Reordering**     |           |           | ✓         | ✓       | ✓        |            | (✓)       |           | (✓)           | (✓)        |
+|                    |           |           |           |         |          |            |           |           |               |            |
+| **Shared Nodes**   |           | ✓         | ✓         | ✓       | ✓        |            | ✓         | ✓         | ✓             | ✓          |
+| **Ext. Memory**    | ✓         |           |           | ✓       |          |            |           |           |               |            |
 
 
 We hope to extend the number of packages. See [issue
@@ -194,7 +223,16 @@ can be installed as follows
 apt install libboost-all-dev
 ```
 
-**LibBDD** and **OxiDD**
+**Aytdd**
+
+Aytdd is a Lean library, which this CMake project does not build. Build its
+archive with `lake build libaytdd` in the Aytdd repository. When this repository
+is its submodule, the archive is found automatically; otherwise, pass its path
+with `-D AYTDD_ROOT=<path>`, or turn the package off with `-D AYTDD=OFF`. Its
+headers include *gmp.h* of the *GMP Library*, which is looked up in the usual
+prefixes or given with `-D GMP_INCLUDE_DIR=<path>`.
+
+**LibBDD**, **OxiDD** and **Ruddy**
 
 These libraries are implemented in Rust and interact with C/C++ via an FFI.
 Hence, one needs to use *cargo* which in turn requires an internet connection to
@@ -228,6 +266,13 @@ cargo install --force cbindgen
 > Otherwise, CMake will abort with an "*Could not find toolchain ''*" error. You
 > can obtain the path from the print message during *cargo install* which states
 > "*warning: be sure to add <THE_PATH> to your PATH ...*"
+
+**SimpleABC**
+
+The build of ABC extracts its list of source files by running GNU Make at
+configure time, so *make* must be installed even when CMake generates for
+another build tool. The whole of ABC is compiled once; only the archive members
+the benchmarks use are linked.
 
 
 ## Usage
@@ -916,6 +961,12 @@ used this benchmarking suite for their evaluation:
 - [[Minato1993](https://dl.acm.org/doi/10.1145/157485.164890)]
   S. Minato. “*Zero-suppressed BDDs for Set Manipulation in Combinatorial
   Problems*”. In: *International Design Automation Conference*. (1993)
+
+- [[Miyasaka2019](https://github.com/MyskYko/abc-bdd)]
+  Yukio Miyasaka, Alan Mishchenko, and Masahiro Fujita: “*A Simple BDD Package
+  without Variable Reordering and Its Application to Logic Optimization with
+  Permissible Functions*”. In: *International Workshop on Logic & Synthesis*.
+  (2019)
 
 - [[Ochi1993](https://dl.acm.org/doi/10.5555/259794.259803)]
   Hiroyuki Ochi, Koichi Yasuoka, and Shuzo Yajima: “*Breadth-first Manipulation

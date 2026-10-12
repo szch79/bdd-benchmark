@@ -99,6 +99,23 @@ if (OXIDD)
   add_subdirectory(external/oxidd oxidd EXCLUDE_FROM_ALL)
 endif (OXIDD)
 
+# Ruddy (Lukáš Urban, Samuel Pastva - Masaryk University, Czech Republic), through a C interface
+option(RUDDY "Build for Ruddy" ON)
+if (RUDDY)
+  add_subdirectory(external/ruddy-ffi ruddy-ffi EXCLUDE_FROM_ALL)
+endif (RUDDY)
+
+# SimpleABC (Alan Mishchenko, Yukio Miyasaka - University of California, United States of America and University of Tokyo, Japan)
+option(SIMPLEABC "Build for SimpleABC" ON)
+if (SIMPLEABC)
+  # ABC requires a CMake version older than 3.5, which CMake 4 only accepts with this variable.
+  set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+  set(READLINE_FOUND FALSE)
+  add_subdirectory(external/abc-bdd abc-bdd EXCLUDE_FROM_ALL)
+  unset(CMAKE_POLICY_VERSION_MINIMUM)
+  unset(READLINE_FOUND)
+endif (SIMPLEABC)
+
 # Sylvan Package (Tom van Dijk - University of Twente, Netherlands)
 option(SYLVAN "Build for Sylvan (Saarland & Eindhoven Univesity, Germany & Netherlands)" ON)
 if (SYLVAN)
