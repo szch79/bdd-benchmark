@@ -2,100 +2,101 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "../common/adapter.h"
 
-#include <aytdd/bcdd.h>
+#include <aytdd/bcdd_mc.h>
 
 namespace aytdd
 {
   /// \brief The one manager of the process.
   ///
-  /// Every edge of the C interface is a bare word that is meaningful only with the manager
-  /// that produced it, and each benchmark builds exactly one manager, so the adapter keeps it
-  /// here rather than inside every function object.
+  /// Every edge of the C interface is a bare word that is meaningful only with the manager that
+  /// produced it, and each benchmark builds exactly one manager, so the adapter keeps it here
+  /// rather than inside every BDD.
   inline aytdd_bcdd_manager* mgr = nullptr;
 
   /// \brief A BDD of that manager, with the operators the drivers use.
   ///
-  /// The package does not reclaim nodes, so a function object owns nothing and copying one is
-  /// copying a word.
-  struct function
+  /// The package does not reclaim nodes, so a BDD owns nothing and copying one is copying a word.
+  struct bcdd_function
   {
-    aytdd_bcdd f = aytdd_bcdd_false();
+    aytdd_bcdd f = aytdd_bcdd_bot();
 
-    function() = default;
+    bcdd_function() = default;
 
-    function(aytdd_bcdd f)
+    bcdd_function(aytdd_bcdd f)
       : f(f)
     {}
 
     bool
-    operator==(const function& o) const
+    operator==(const bcdd_function& o) const
     {
       return f == o.f;
     }
 
     bool
-    operator!=(const function& o) const
+    operator!=(const bcdd_function& o) const
     {
       return f != o.f;
     }
 
-    function
+    bcdd_function
     operator~() const
     {
       return aytdd_bcdd_not(f);
     }
 
-    function
-    operator&(const function& o) const
+    bcdd_function
+    operator&(const bcdd_function& o) const
     {
       return aytdd_bcdd_and(mgr, f, o.f);
     }
 
-    function
-    operator|(const function& o) const
+    bcdd_function
+    operator|(const bcdd_function& o) const
     {
       return aytdd_bcdd_or(mgr, f, o.f);
     }
 
-    function
-    operator^(const function& o) const
+    bcdd_function
+    operator^(const bcdd_function& o) const
     {
       return aytdd_bcdd_xor(mgr, f, o.f);
     }
 
-    function
-    operator-(const function& o) const
+    bcdd_function
+    operator-(const bcdd_function& o) const
     {
       return aytdd_bcdd_diff(mgr, f, o.f);
     }
 
-    function&
-    operator&=(const function& o)
+    bcdd_function&
+    operator&=(const bcdd_function& o)
     {
       return *this = *this & o;
     }
 
-    function&
-    operator|=(const function& o)
+    bcdd_function&
+    operator|=(const bcdd_function& o)
     {
       return *this = *this | o;
     }
 
-    function&
-    operator^=(const function& o)
+    bcdd_function&
+    operator^=(const bcdd_function& o)
     {
       return *this = *this ^ o;
     }
 
-    function&
-    operator-=(const function& o)
+    bcdd_function&
+    operator-=(const bcdd_function& o)
     {
       return *this = *this - o;
     }
@@ -113,37 +114,46 @@ public:
 
   static constexpr bool complement_edges = true;
 
-  using dd_t         = aytdd::function;
-  using build_node_t = aytdd::function;
+  using dd_t         = aytdd::bcdd_function;
+  using build_node_t = aytdd::bcdd_function;
 
 private:
   const int _varcount;
-  aytdd::function _latest_build;
+  aytdd::bcdd_function _latest_build;
+
+  aytdd::bcdd_function _vars_relnext;
+  aytdd_bcdd_subst* _subst_relnext = nullptr;
+
+  aytdd::bcdd_function _vars_relprev;
+  aytdd_bcdd_subst* _subst_relprev = nullptr;
 
   // Init and Deinit
 public:
   aytdd_bcdd_adapter(int varcount)
     : _varcount(varcount)
   {
-    // The package never reclaims nodes.  Its node table grows beyond the reservation made here
-    // for half of '-M' at roughly 24 bytes per decision, while each computed table keeps a fixed
-    // number of 16-byte slots.  The conjunction table takes a sixth of the other half, and the
-    // exclusive-disjunction and if-then-else tables an eighth of the conjunction table each.
+    // The package never reclaims nodes.  Its node table grows beyond the reservation made here at
+    // roughly 24 bytes per decision, while each computed table keeps a fixed number of 16-byte
+    // slots, rounded down to a power of two.  As in the BuDDy adapter, the conjunction and
+    // relational-product tables take one slot per 64 decisions each, and the less frequent
+    // exclusive-disjunction and if-then-else tables one per 256 each.  The node table takes the
+    // rest of '-M', at 24 + 16 * (2/64 + 2/256) = 197/8 bytes per decision.
     const size_t bytes = static_cast<size_t>(M) * 1024 * 1024;
+    const size_t nodes = bytes * 8 / 197;
     aytdd_bcdd_config config{};
-    config.node_table_size = bytes / 2 / 24;
-    config.and_cache_size  = bytes / 2 / 96;
-    config.xor_cache_size  = config.and_cache_size / 8;
-    config.ite_cache_size  = config.and_cache_size / 8;
-    aytdd::mgr             = aytdd_bcdd_manager_new(&config);
+    config.node_table_size      = nodes;
+    config.and_cache_size       = nodes / 64;
+    config.xor_cache_size       = nodes / 256;
+    config.ite_cache_size       = nodes / 256;
+    config.and_exist_cache_size = nodes / 64;
+    aytdd::mgr                  = aytdd_bcdd_manager_new(&config);
     if (aytdd::mgr == nullptr) { throw std::runtime_error("aytdd: could not create a manager"); }
-    if (enable_reordering) {
-      std::cerr << "aytdd: variable reordering is not supported, ignoring -R" << std::endl;
-    }
   }
 
   ~aytdd_bcdd_adapter()
   {
+    aytdd_bcdd_subst_free(_subst_relnext);
+    aytdd_bcdd_subst_free(_subst_relprev);
     aytdd_bcdd_manager_free(aytdd::mgr);
     aytdd::mgr = nullptr;
   }
@@ -157,246 +167,289 @@ public:
 
   // BDD Operations
 public:
-  inline aytdd::function
+  inline aytdd::bcdd_function
   top()
   {
-    return aytdd_bcdd_true();
+    return aytdd_bcdd_top();
   }
 
-  inline aytdd::function
+  inline aytdd::bcdd_function
   bot()
   {
-    return aytdd_bcdd_false();
+    return aytdd_bcdd_bot();
   }
 
-  inline aytdd::function
+  inline aytdd::bcdd_function
   ithvar(uint32_t label)
   {
     return aytdd_bcdd_var(aytdd::mgr, label);
   }
 
-  inline aytdd::function
+  inline aytdd::bcdd_function
   nithvar(uint32_t label)
   {
     return aytdd_bcdd_lit(aytdd::mgr, label, false);
   }
 
+  /// \brief The conjunction of the variables of a range, in any order and with repetitions.
   template <typename IT>
-  inline aytdd::function
+  inline aytdd::bcdd_function
   cube(IT rbegin, IT rend)
   {
-    aytdd::function res = top();
-    while (rbegin != rend) { res = ite(ithvar(*(rbegin++)), std::move(res), bot()); }
-    return res;
+    const std::vector<uint32_t> vars(rbegin, rend);
+    return aytdd_bcdd_cube(aytdd::mgr, vars.data(), vars.size());
   }
 
-  inline aytdd::function
+  /// \brief The conjunction of the variables that satisfy a predicate.
+  inline aytdd::bcdd_function
   cube(const std::function<bool(int)>& pred)
   {
-    aytdd::function res = top();
-    for (int i = _varcount - 1; 0 <= i; --i) {
-      if (pred(i)) { res = ite(ithvar(i), std::move(res), bot()); }
+    std::vector<uint32_t> vars;
+    for (int i = 0; i < _varcount; ++i) {
+      if (pred(i)) { vars.push_back(i); }
     }
-    return res;
+    return aytdd_bcdd_cube(aytdd::mgr, vars.data(), vars.size());
   }
 
-  inline aytdd::function
-  apply_and(const aytdd::function& f, const aytdd::function& g)
+  inline aytdd::bcdd_function
+  apply_and(const aytdd::bcdd_function& f, const aytdd::bcdd_function& g)
   {
     return f & g;
   }
 
-  inline aytdd::function
-  apply_or(const aytdd::function& f, const aytdd::function& g)
+  inline aytdd::bcdd_function
+  apply_or(const aytdd::bcdd_function& f, const aytdd::bcdd_function& g)
   {
     return f | g;
   }
 
-  inline aytdd::function
-  apply_diff(const aytdd::function& f, const aytdd::function& g)
+  inline aytdd::bcdd_function
+  apply_diff(const aytdd::bcdd_function& f, const aytdd::bcdd_function& g)
   {
     return f - g;
   }
 
-  inline aytdd::function
-  apply_imp(const aytdd::function& f, const aytdd::function& g)
+  inline aytdd::bcdd_function
+  apply_imp(const aytdd::bcdd_function& f, const aytdd::bcdd_function& g)
   {
     return aytdd_bcdd_imp(aytdd::mgr, f.f, g.f);
   }
 
-  inline aytdd::function
-  apply_xor(const aytdd::function& f, const aytdd::function& g)
+  inline aytdd::bcdd_function
+  apply_xor(const aytdd::bcdd_function& f, const aytdd::bcdd_function& g)
   {
     return f ^ g;
   }
 
-  inline aytdd::function
-  apply_xnor(const aytdd::function& f, const aytdd::function& g)
+  inline aytdd::bcdd_function
+  apply_xnor(const aytdd::bcdd_function& f, const aytdd::bcdd_function& g)
   {
     return aytdd_bcdd_iff(aytdd::mgr, f.f, g.f);
   }
 
-  inline aytdd::function
-  ite(const aytdd::function& i, const aytdd::function& t, const aytdd::function& e)
+  inline aytdd::bcdd_function
+  ite(const aytdd::bcdd_function& i, const aytdd::bcdd_function& t, const aytdd::bcdd_function& e)
   {
     return aytdd_bcdd_ite(aytdd::mgr, i.f, t.f, e.f);
   }
 
   template <typename IT>
-  inline aytdd::function
-  extend(const aytdd::function& f, IT /*begin*/, IT /*end*/)
+  inline aytdd::bcdd_function
+  extend(const aytdd::bcdd_function& f, IT /*begin*/, IT /*end*/)
   {
     return f;
   }
 
-  inline aytdd::function
-  exists(const aytdd::function&, int)
+  inline aytdd::bcdd_function
+  exists(const aytdd::bcdd_function& f, int i)
   {
-    throw std::logic_error("aytdd: quantification is not supported");
+    return aytdd_bcdd_exists(aytdd::mgr, f.f, ithvar(i).f);
   }
 
-  inline aytdd::function
-  exists(const aytdd::function&, const std::function<bool(int)>&)
+  inline aytdd::bcdd_function
+  exists(const aytdd::bcdd_function& f, const std::function<bool(int)>& pred)
   {
-    throw std::logic_error("aytdd: quantification is not supported");
-  }
-
-  template <typename IT>
-  inline aytdd::function
-  exists(const aytdd::function&, IT, IT)
-  {
-    throw std::logic_error("aytdd: quantification is not supported");
-  }
-
-  inline aytdd::function
-  forall(const aytdd::function&, int)
-  {
-    throw std::logic_error("aytdd: quantification is not supported");
-  }
-
-  inline aytdd::function
-  forall(const aytdd::function&, const std::function<bool(int)>&)
-  {
-    throw std::logic_error("aytdd: quantification is not supported");
+    return aytdd_bcdd_exists(aytdd::mgr, f.f, cube(pred).f);
   }
 
   template <typename IT>
-  inline aytdd::function
-  forall(const aytdd::function&, IT, IT)
+  inline aytdd::bcdd_function
+  exists(const aytdd::bcdd_function& f, IT rbegin, IT rend)
   {
-    throw std::logic_error("aytdd: quantification is not supported");
+    return aytdd_bcdd_exists(aytdd::mgr, f.f, cube(rbegin, rend).f);
   }
 
-  inline aytdd::function
-  relnext(const aytdd::function&, const aytdd::function&, const aytdd::function&)
+  inline aytdd::bcdd_function
+  forall(const aytdd::bcdd_function& f, int i)
   {
-    throw std::logic_error("aytdd: relational products are not supported");
+    return aytdd_bcdd_forall(aytdd::mgr, f.f, ithvar(i).f);
   }
 
-  inline aytdd::function
-  relprev(const aytdd::function&, const aytdd::function&, const aytdd::function&)
+  inline aytdd::bcdd_function
+  forall(const aytdd::bcdd_function& f, const std::function<bool(int)>& pred)
   {
-    throw std::logic_error("aytdd: relational products are not supported");
+    return aytdd_bcdd_forall(aytdd::mgr, f.f, cube(pred).f);
+  }
+
+  template <typename IT>
+  inline aytdd::bcdd_function
+  forall(const aytdd::bcdd_function& f, IT rbegin, IT rend)
+  {
+    return aytdd_bcdd_forall(aytdd::mgr, f.f, cube(rbegin, rend).f);
+  }
+
+  /// \brief The successors of 'states' under 'rel', whose current variables are the even ones
+  ///        and whose next variables are the odd ones.
+  ///
+  /// The relational product quantifies the current variables, and the substitution then renames
+  /// each next variable to its current one.  The cube and the substitution are built on the first
+  /// call and kept, as the other adapters keep their cube and permutation.
+  inline aytdd::bcdd_function
+  relnext(const aytdd::bcdd_function& states,
+          const aytdd::bcdd_function& rel,
+          const aytdd::bcdd_function& /*rel_support*/)
+  {
+    if (_subst_relnext == nullptr) {
+      _vars_relnext  = cube([](int x) { return x % 2 == 0; });
+      _subst_relnext = aytdd_bcdd_subst_new();
+      for (int x = 1; x < _varcount; x += 2) {
+        aytdd_bcdd_subst_set(_subst_relnext, x, ithvar(x & ~1).f);
+      }
+    }
+    const aytdd_bcdd next = aytdd_bcdd_and_exists(aytdd::mgr, states.f, rel.f, _vars_relnext.f);
+    return aytdd_bcdd_vector_compose(aytdd::mgr, next, _subst_relnext);
+  }
+
+  /// \brief The predecessors of 'states' under 'rel', renaming each current variable to its next
+  ///        one before the relational product quantifies the next variables.
+  inline aytdd::bcdd_function
+  relprev(const aytdd::bcdd_function& states,
+          const aytdd::bcdd_function& rel,
+          const aytdd::bcdd_function& /*rel_support*/)
+  {
+    if (_subst_relprev == nullptr) {
+      _vars_relprev  = cube([](int x) { return x % 2 == 1; });
+      _subst_relprev = aytdd_bcdd_subst_new();
+      for (int x = 0; x < _varcount; x += 2) {
+        aytdd_bcdd_subst_set(_subst_relprev, x, ithvar(x | 1).f);
+      }
+    }
+    const aytdd_bcdd prev = aytdd_bcdd_vector_compose(aytdd::mgr, states.f, _subst_relprev);
+    return aytdd_bcdd_and_exists(aytdd::mgr, prev, rel.f, _vars_relprev.f);
   }
 
   /// \brief The number of nodes reachable from f, the one sink included, as CUDD counts them.
   inline uint64_t
-  nodecount(const aytdd::function& f)
+  nodecount(const aytdd::bcdd_function& f)
   {
     return aytdd_bcdd_node_count(aytdd::mgr, f.f);
   }
 
   inline uint64_t
-  satcount(const aytdd::function& f)
+  satcount(const aytdd::bcdd_function& f)
   {
-    return static_cast<uint64_t>(aytdd_bcdd_sat_count(aytdd::mgr, f.f, _varcount));
+    return this->satcount(f, this->_varcount);
   }
 
+  /// \brief The number of models of f over 'vc' of the variables, on which f depends only.
+  ///
+  /// The drivers interleave the counted variables with the others ('relprod', 'game-of-life',
+  /// 'hamiltonian'), so the count is over all variables and divided by two for each variable not
+  /// counted, as in the BuDDy adapter.
   inline uint64_t
-  satcount(const aytdd::function& f, const size_t vc)
+  satcount(const aytdd::bcdd_function& f, const size_t vc)
   {
     assert(vc <= static_cast<size_t>(this->_varcount));
 
     const double excess_variables = static_cast<double>(this->_varcount) - static_cast<double>(vc);
 
-    return static_cast<uint64_t>(aytdd_bcdd_sat_count(aytdd::mgr, f.f, _varcount)
+    return static_cast<uint64_t>(aytdd_bcdd_sat_count_double(aytdd::mgr, f.f, _varcount)
                                  / std::pow(2, excess_variables));
   }
 
-  inline aytdd::function
-  satone(const aytdd::function&)
+  /// \brief The cube of the literals of a path from f to true, false when f is false.
+  ///
+  /// The path takes the low child of each decision unless it is false, as BuDDy's 'bdd_satone'
+  /// does.
+  inline aytdd::bcdd_function
+  satone(const aytdd::bcdd_function& f)
   {
-    throw std::logic_error("aytdd: witness extraction is not supported");
+    return aytdd_bcdd_sat_one(aytdd::mgr, f.f);
   }
 
-  inline aytdd::function
-  satone(const aytdd::function&, const aytdd::function&)
+  inline aytdd::bcdd_function
+  satone(const aytdd::bcdd_function&, const aytdd::bcdd_function&)
   {
-    throw std::logic_error("aytdd: witness extraction is not supported");
+    throw std::logic_error("aytdd: a satisfying cube over a set of variables is not supported");
   }
 
+  /// \brief The literals of the path of 'satone', by increasing variable, none at a constant.
   inline std::vector<std::pair<uint32_t, char>>
-  pickcube(const aytdd::function&)
+  pickcube(const aytdd::bcdd_function& f)
   {
-    throw std::logic_error("aytdd: witness extraction is not supported");
+    std::vector<aytdd_literal> lits(_varcount);
+    const size_t n = aytdd_bcdd_pick_cube(aytdd::mgr, f.f, lits.data(), lits.size());
+    // A path has at most one literal per variable.
+    assert(n <= lits.size());
+
+    std::vector<std::pair<uint32_t, char>> res;
+    res.reserve(n);
+    for (size_t i = 0; i < n; ++i) {
+      res.push_back({ lits[i].var, static_cast<char>('0' + lits[i].positive) });
+    }
+    return res;
   }
 
   void
-  print_dot(const aytdd::function&, const std::string&)
+  print_dot(const aytdd::bcdd_function&, const std::string&)
   {
     std::cerr << "aytdd_bcdd_adapter does not support dot export" << std::endl;
   }
 
   void
-  save(const aytdd::function&, const std::string&)
+  save(const aytdd::bcdd_function&, const std::string&)
   {
-    throw std::logic_error("aytdd: serialisation is not supported");
-  }
-
-  aytdd::function
-  load(const std::string&)
-  {
-    throw std::logic_error("aytdd: serialisation is not supported");
+    std::cerr << "aytdd_bcdd_adapter does not support BCDD export" << std::endl;
   }
 
   // BDD Build Operations
 public:
-  inline aytdd::function
+  inline aytdd::bcdd_function
   build_node(const bool value)
   {
-    const aytdd::function res = value ? top() : bot();
+    const aytdd::bcdd_function res = value ? top() : bot();
     if (_latest_build == top() || _latest_build == bot()) { _latest_build = res; }
     return res;
   }
 
   /// \brief The decision on 'label' with the given children, interned and reduced.
   ///
-  /// The drivers feed decisions bottom up over increasing levels, which is exactly the
-  /// precondition of the raw constructor, so this needs no if-then-else.
-  inline aytdd::function
-  build_node(const uint32_t label, const aytdd::function& low, const aytdd::function& high)
+  /// Both children are over variables greater than 'label', since the drivers build a diagram
+  /// from its sinks upwards, which is the precondition of the raw constructor, so this needs no
+  /// if-then-else.  Equal children are allowed, as the constructor then returns the child.
+  inline aytdd::bcdd_function
+  build_node(const uint32_t label,
+             const aytdd::bcdd_function& low,
+             const aytdd::bcdd_function& high)
   {
     return _latest_build = aytdd_bcdd_node(aytdd::mgr, label, low.f, high.f);
   }
 
-  inline aytdd::function
+  inline aytdd::bcdd_function
   build()
   {
-    const aytdd::function res = _latest_build;
-    _latest_build             = bot();
+    const aytdd::bcdd_function res = _latest_build;
+    _latest_build                  = bot();
     return res;
   }
 
   // Statistics
 public:
-  /// \brief Not reported, as for Sylvan.
-  ///
-  /// The C interface exposes no count of the decisions the manager holds, and only picotrav
-  /// records this statistic.
+  /// \brief The number of decisions the manager holds, reachable or not, since no node is freed.
   inline size_t
   allocated_nodes()
   {
-    return 0;
+    return aytdd_bcdd_allocated_nodes(aytdd::mgr);
   }
 
   void

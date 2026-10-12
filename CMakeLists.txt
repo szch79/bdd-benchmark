@@ -48,12 +48,6 @@ message(STATUS "")
 # ---------------------------------------------------------------------------- #
 # BDD Packages
 
-# Aytdd Package (Mingtong Lin), a Lean library used through its C interface
-option(AYTDD "Build for Aytdd" ON)
-if (AYTDD)
-  add_subdirectory(external/aytdd aytdd EXCLUDE_FROM_ALL)
-endif (AYTDD)
-
 # Adiar Package (Steffan Sølvsten - Aarhus University, Denmark)
 option(ADIAR "Build for Adiar" ON)
 if (ADIAR)
@@ -63,6 +57,12 @@ if (ADIAR)
 
   add_subdirectory (external/adiar adiar EXCLUDE_FROM_ALL)
 endif(ADIAR)
+
+# Aytdd Package (Mingtong Lin), a Lean library used through its C interface
+option(AYTDD "Build for Aytdd" ON)
+if (AYTDD)
+  add_subdirectory(external/aytdd aytdd EXCLUDE_FROM_ALL)
+endif (AYTDD)
 
 # BuDDy Package (Jørn Lind-Nielsen - Copenhagen University, Denmark)
 option(BUDDY "Build for BuDDy" ON)
