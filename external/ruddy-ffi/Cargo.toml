@@ -1,0 +1,13 @@
+[package]
+name = "ruddy-ffi"
+version = "0.1.0"
+edition = "2021"
+description = "Foreign function interface for sybila/ruddy"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+
+[dependencies]
+ruddy = { path = "../ruddy" }

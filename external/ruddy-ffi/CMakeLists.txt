@@ -1,0 +1,69 @@
+cmake_minimum_required(VERSION 3.15)
+
+project(ruddy-bindings)
+
+# --- Settings -----------------------------------------------------------------
+
+if(PROJECT_IS_TOP_LEVEL)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
+# This could be derived from the $<CONFIG> if desired.
+set(RUDDY_CARGO_PROFILE "release" CACHE STRING "Sets the build profile used for Rust dependencies (`dev`, `release`, or `release-with-debug`)")
+set_property(CACHE RUDDY_CARGO_PROFILE PROPERTY STRINGS "dev" "release" "release-with-debug")
+
+# Mark some cmake variables as advanced since they don't have to be exposed to the user.
+mark_as_advanced(FORCE
+    CORROSION_BUILD_TESTS
+    CORROSION_DEV_MODE
+    CORROSION_NATIVE_TOOLING
+    CORROSION_NO_WARN_PARSE_TARGET_TRIPLE_FAILED
+    CORROSION_RESPECT_OUTPUT_DIRECTORY
+    CORROSION_VERBOSE_OUTPUT
+    Rust_RESOLVE_RUSTUP_TOOLCHAINS)
+
+
+# --- Build Dependencies -------------------------------------------------------
+
+# Use FetchContent to acquire Corrosion for the cmake integration of Rust projects.
+include(FetchContent)
+
+FetchContent_Declare(
+    Corrosion
+    GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
+    GIT_TAG v0.5.2
+)
+FetchContent_MakeAvailable(Corrosion)
+
+find_program(CBINDGEN_EXECUTABLE
+    NAMES cbindgen
+    DOC "Requires cbindgen to generate the ruddy-ffi header"
+    REQUIRED)
+
+
+# --- Main Targets -------------------------------------------------------------
+
+# Generate ruddy.h using cbindgen
+set(ruddy_include ${PROJECT_BINARY_DIR}/include)
+set(ruddy_h ${ruddy_include}/ruddy.h)
+file(GLOB_RECURSE ruddy_ffi_sources CONFIGURE_DEPENDS ${PROJECT_SOURCE_DIR}/src/*.rs)
+add_custom_command(
+    OUTPUT ${ruddy_h}
+    COMMAND ${CBINDGEN_EXECUTABLE}
+    ARGS --output ${ruddy_h} ${PROJECT_SOURCE_DIR}
+    DEPENDS ${ruddy_ffi_sources} ${PROJECT_SOURCE_DIR}/cbindgen.toml
+    COMMENT "Generating ruddy.h using cbindgen"
+    VERBATIM)
+# Custom target such that targets in other directories can depend on the header
+add_custom_target(ruddy-ffi-header ALL DEPENDS ${ruddy_h})
+
+# Import the ruddy-ffi crate specifically
+corrosion_import_crate(
+    MANIFEST_PATH Cargo.toml
+    PROFILE ${RUDDY_CARGO_PROFILE}
+    CRATES ruddy-ffi
+    CRATE_TYPES cdylib staticlib)
+add_dependencies(ruddy_ffi ruddy-ffi-header)
+target_include_directories(ruddy_ffi INTERFACE ${ruddy_include})
+
+add_library(ruddy ALIAS ruddy_ffi)
