@@ -25,3 +25,9 @@
 [submodule "external/pugixml"]
 	path = external/pugixml
 	url = ../../zeux/pugixml
+[submodule "external/ruddy"]
+	path = external/ruddy
+	url = ../../sybila/ruddy
+[submodule "external/abc-bdd"]
+	path = external/abc-bdd
+	url = ../../MyskYko/abc-bdd
