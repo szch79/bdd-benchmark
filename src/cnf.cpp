@@ -7,6 +7,7 @@
 #include <iostream>
 #include <limits>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -30,16 +31,20 @@ size_t total_nodes = 0;
 // ========================================================================== //
 std::string file;
 bool satcount = false;
+std::string schedule_file;
+bool bucket_elimination = false;
 
 class parsing_policy
 {
 public:
   static constexpr std::string_view name = "CNF";
-  static constexpr std::string_view args = "f:c";
+  static constexpr std::string_view args = "bf:cs:";
 
   static constexpr std::string_view help_text =
+    "        -b                    Conjoin and quantify by bucket elimination\n"
     "        -c                    Count satisfying assignments\n"
-    "        -f PATH               Path to '.cnf'/'.dimacs' file";
+    "        -f PATH               Path to '.cnf'/'.dimacs' file\n"
+    "        -s PATH               Conjoin and quantify as the schedule file says";
 
   // NOTE: One could add more options to this benchmark, e.g., to influence the
   // order in which the clauses are conjoined. The current implementation
@@ -61,6 +66,13 @@ public:
   // ensure that the algorithms are deterministic. Therefore it is much easier
   // (and also less time-consuming) to do all the preprocessing steps
   // externally.
+  //
+  // The options `-s` and `-b` replace the balanced conjunction by the two
+  // methods of the SAT solver `tbsat` of Bryant's TBUDDY package
+  // (https://github.com/rebryant/tbuddy-artifact), which interleave the
+  // conjunctions with existential quantification and therefore decide only
+  // whether the CNF is satisfiable. With `-s`, a schedule file lists the
+  // operations; with `-b`, bucket elimination orders them by the variable order.
 
   /// Parse one command line option, where `c` is one of keys specified in the
   /// `args` constant of this class and `arg` is the option's value (if the
@@ -86,6 +98,18 @@ public:
     }
     case 'c': {
       satcount = true;
+      return false;
+    }
+    case 's': {
+      if (!std::filesystem::exists(arg)) {
+        std::cerr << "File '" << arg << "' does not exist\n";
+        return true;
+      }
+      schedule_file = arg;
+      return false;
+    }
+    case 'b': {
+      bucket_elimination = true;
       return false;
     }
     default: return true;
@@ -154,8 +178,11 @@ public:
       const int c = input.get();
       ++line;
       if (c == 'c') {
-        input >> tok;
-        if (std::all_of(tok.begin(), tok.end(), ::isdigit)) {
+        // Read the comment line as a whole, so that an empty one does not consume the next line
+        std::string comment;
+        std::getline(input, comment);
+        std::istringstream words(comment);
+        if (words >> tok && std::all_of(tok.begin(), tok.end(), ::isdigit)) {
           // Ignore lines where the token after `c` is not numeric. This allows extensions of the
           // format.
 
@@ -166,7 +193,6 @@ public:
           }
           var_order.push_back(var_id - 1);
         }
-        input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
       } else if (c == 'p') {
         break;
       } else {
@@ -224,6 +250,13 @@ public:
     cnf._clause_data.reserve(nclauses * 4);
     cnf._clause_offsets.reserve(nclauses);
     while (input.good()) {
+      // Comment lines may also occur among the clauses
+      input >> std::ws;
+      if (input.peek() == 'c') {
+        input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        continue;
+      }
+
       int literal;
       input >> literal;
       if (input.fail()) {
@@ -310,12 +343,13 @@ public:
 /// Construct the clauses of `cnf`
 ///
 /// This will filter out clauses equivalent to `⊤`, so the resulting vector
-/// might be shorter than `cnf.num_clauses()`.
+/// might be shorter than `cnf.num_clauses()`, unless `keep_tautologies` is set,
+/// in which case they are kept as `⊤` and the clauses keep their numbering.
 ///
 /// Precondition: there is no empty clause
 template <typename Adapter>
 std::vector<typename Adapter::dd_t>
-construct_clauses(Adapter& adapter, const CNF& cnf)
+construct_clauses(Adapter& adapter, const CNF& cnf, const bool keep_tautologies = false)
 {
   std::vector<typename Adapter::dd_t> clauses;
   clauses.reserve(cnf.num_clauses());
@@ -328,7 +362,8 @@ construct_clauses(Adapter& adapter, const CNF& cnf)
   // disjunction operator) for better performance on time-forward processing
   // implementations
 
-  cnf.foreach_clause([&adapter, &var_to_level, &polarities, &clauses](auto begin, auto end) {
+  cnf.foreach_clause([&adapter, &var_to_level, &polarities, &clauses, keep_tautologies](auto begin,
+                                                                                     auto end) {
     // minimum and maximum variable defined in the clause
     unsigned min_level = var_to_level.size(), max_level = 0;
 
@@ -340,6 +375,7 @@ construct_clauses(Adapter& adapter, const CNF& cnf)
       if (prev != 0 && prev != polarity) {
         // x ∨ ¬x ≡ ⊤, just clean the polarities and continue with the next clause
         std::fill(polarities.begin() + min_level, polarities.begin() + max_level + 1, 0);
+        if (keep_tautologies) clauses.push_back(adapter.top());
         return;
       } else {
         polarities[level] = polarity;
@@ -428,6 +464,242 @@ conjoin(Adapter& adapter, const IT begin, const IT end)
 }
 
 // ========================================================================== //
+// Schedules and bucket elimination, after the SAT solver `tbsat` of TBUDDY
+// (https://github.com/rebryant/tbuddy-artifact, `src/tbsat/teval.cpp`)
+
+/// A command of a schedule file
+///
+/// A schedule is a stack program over terms, each the BDD of a set of clauses
+/// with some variables existentially quantified. The line `c i j ...` pushes
+/// the clauses numbered `i`, `j`, ... (from 1). The line `a k` pops a term and
+/// conjoins it with the `k` terms below it, one after the other, and pushes the
+/// result. The line `q x y ...` replaces the top term by its existential
+/// quantification over the variables `x`, `y`, ... (from 1). Lines starting
+/// with `#` or `i` are comments. The commands `=` and `g` of `tbsat`, which
+/// introduce and eliminate parity constraints, are not supported.
+struct schedule_command
+{
+  /// One of `c`, `a` and `q`
+  char op;
+
+  /// The clauses, the number of conjunctions, or the variables
+  std::vector<int> args;
+};
+
+/// Parse the schedule file at `path` for a CNF with `nclauses` clauses over
+/// `nvars` variables
+///
+/// The schedule must push each clause at most once and never pop more terms
+/// than the stack holds.
+std::optional<std::vector<schedule_command>>
+parse_schedule(const std::string& path, const size_t nclauses, const size_t nvars)
+{
+  std::ifstream input(path, std::ios::in);
+  std::vector<schedule_command> commands;
+  std::vector<bool> pushed(nclauses, false);
+  size_t height = 0;
+  std::string text;
+  unsigned line = 0;
+  while (std::getline(input, text)) {
+    ++line;
+    std::istringstream words(text);
+    char op;
+    if (!(words >> op) || op == '#' || op == 'i') continue;
+    if (op != 'c' && op != 'a' && op != 'q') {
+      std::cerr << "error: unsupported schedule command '" << op << "' (line " << line << ")\n";
+      return {};
+    }
+
+    schedule_command command{ op, {} };
+    int arg;
+    while (words >> arg) command.args.push_back(arg);
+    if (!words.eof()) {
+      std::cerr << "error: expected an integer (schedule line " << line << ")\n";
+      return {};
+    }
+
+    const size_t bound = op == 'c' ? nclauses : nvars;
+    if (op == 'a' ? command.args.size() != 1 || command.args[0] < 1
+                  : std::any_of(command.args.begin(), command.args.end(), [bound](int a) {
+                      return a < 1 || size_t(a) > bound;
+                    })) {
+      std::cerr << "error: invalid arguments of '" << op << "' (schedule line " << line << ")\n";
+      return {};
+    }
+
+    // Track the stack
+    bool valid = true;
+    switch (op) {
+    case 'c':
+      for (const int i : command.args) {
+        valid = valid && !pushed[i - 1];
+        pushed[i - 1] = true;
+      }
+      height += command.args.size();
+      break;
+    case 'a':
+      valid = size_t(command.args[0]) < height;
+      height -= valid ? command.args[0] : 0;
+      break;
+    case 'q': valid = height > 0; break;
+    }
+    if (!valid) {
+      std::cerr << "error: '" << op << "' reuses a clause or pops an empty stack (schedule line "
+                << line << ")\n";
+      return {};
+    }
+    commands.push_back(std::move(command));
+  }
+  if (input.bad()) {
+    std::cerr << "error: reading from the schedule file failed\n";
+    return {};
+  }
+  return commands;
+}
+
+/// The operations of a run that conjoins and quantifies
+template <typename Adapter>
+class reduction
+{
+  using dd_t = typename Adapter::dd_t;
+
+  Adapter& _adapter;
+
+public:
+  /// Number of conjunctions computed
+  size_t conjunctions = 0;
+
+  /// Number of existential quantifications computed
+  size_t quantifications = 0;
+
+  reduction(Adapter& adapter)
+    : _adapter(adapter)
+  {}
+
+  dd_t
+  conjoin(const dd_t& f, const dd_t& g)
+  {
+    ++conjunctions;
+    dd_t res = f & g;
+
+#ifdef BDD_BENCHMARK_STATS
+    const size_t nodecount = _adapter.nodecount(res);
+    largest_bdd            = std::max(largest_bdd, nodecount);
+    total_nodes += nodecount;
+#endif // BDD_BENCHMARK_STATS
+
+    return res;
+  }
+
+  /// Quantify `f` over the given levels, sorted in ascending order
+  dd_t
+  exists(const dd_t& f, const std::vector<int>& levels)
+  {
+    ++quantifications;
+    return _adapter.exists(f, levels.crbegin(), levels.crend());
+  }
+
+  /// Level of the root of `f`, which must not be constant
+  ///
+  /// Every path from the root tests the root's variable, so it is the least
+  /// variable of the path that `pickcube` returns.
+  int
+  root_level(const dd_t& f)
+  {
+    const auto path = _adapter.pickcube(f);
+    assert(!path.empty());
+    int level = path.front().first;
+    for (const auto& literal : path) level = std::min<int>(level, literal.first);
+    return level;
+  }
+
+  /// Bucket elimination over `terms`, whose variables are among the first
+  /// `nlevels` levels
+  ///
+  /// A term is kept in the bucket of its root's level. The buckets are
+  /// processed by increasing level: the terms of a bucket are conjoined in
+  /// pairs, in the order they were added, and each product is added to the
+  /// bucket of its root's level, which may be the current one. The last term of
+  /// a bucket is quantified over the bucket's variable and added to the bucket
+  /// of its root's level unless it is `⊤`. The result is `⊥` as soon as a term
+  /// is `⊥`, and `⊤` once all buckets are empty.
+  dd_t
+  bucket_eliminate(std::vector<dd_t> terms, const size_t nlevels)
+  {
+    std::vector<std::vector<dd_t>> buckets(nlevels);
+    for (dd_t& f : terms) {
+      if (f == _adapter.bot()) return f;
+      if (f == _adapter.top()) continue;
+      buckets[root_level(f)].push_back(std::move(f));
+    }
+    terms.clear();
+
+    for (size_t level = 0; level < nlevels; ++level) {
+      size_t next = 0;
+      while (next + 1 < buckets[level].size()) {
+        const dd_t f = std::move(buckets[level][next++]);
+        const dd_t g = std::move(buckets[level][next++]);
+        dd_t h       = conjoin(f, g);
+        if (h == _adapter.bot()) return h;
+        buckets[root_level(h)].push_back(std::move(h));
+      }
+      if (next + 1 == buckets[level].size()) {
+        dd_t h = exists(buckets[level][next], { int(level) });
+        if (h != _adapter.top()) buckets[root_level(h)].push_back(std::move(h));
+      }
+      buckets[level] = {};
+    }
+    return _adapter.top();
+  }
+
+  /// Run the schedule `commands`, as checked by `parse_schedule`, over
+  /// `clauses`, where `var_to_level` maps the variables to levels
+  ///
+  /// The result is `⊥` as soon as a conjunction is `⊥`. If the schedule leaves
+  /// more than one term on the stack, the remaining terms are combined by
+  /// bucket elimination.
+  dd_t
+  run_schedule(std::vector<dd_t> clauses,
+               const std::vector<schedule_command>& commands,
+               const std::vector<unsigned>& var_to_level)
+  {
+    std::vector<dd_t> stack;
+    std::vector<int> levels;
+    for (const schedule_command& command : commands) {
+      switch (command.op) {
+      case 'c':
+        for (const int i : command.args) stack.push_back(std::move(clauses[i - 1]));
+        break;
+
+      case 'a': {
+        const size_t k = command.args[0];
+        assert(k < stack.size());
+        dd_t product = std::move(stack.back());
+        stack.pop_back();
+        for (size_t j = 0; j < k; ++j) {
+          product = conjoin(product, stack.back());
+          stack.pop_back();
+          if (product == _adapter.bot()) return product;
+        }
+        stack.push_back(std::move(product));
+        break;
+      }
+
+      case 'q':
+        assert(!stack.empty());
+        levels.clear();
+        for (const int x : command.args) levels.push_back(var_to_level[x - 1]);
+        std::sort(levels.begin(), levels.end());
+        stack.back() = exists(stack.back(), levels);
+        break;
+      }
+    }
+    if (stack.size() == 1) return stack.back();
+    return bucket_eliminate(std::move(stack), var_to_level.size());
+  }
+};
+
+// ========================================================================== //
 template <typename Adapter>
 int
 run_cnf(int argc, char** argv)
@@ -437,6 +709,20 @@ run_cnf(int argc, char** argv)
 
   if (file.empty()) {
     std::cerr << "Input file not specified\n";
+    return -1;
+  }
+
+  const bool quantifying = !schedule_file.empty() || bucket_elimination;
+  if (!schedule_file.empty() && bucket_elimination) {
+    std::cerr << "A schedule and bucket elimination exclude each other\n";
+    return -1;
+  }
+  if (quantifying && satcount) {
+    std::cerr << "Quantifying runs decide satisfiability and do not count\n";
+    return -1;
+  }
+  if (quantifying && Adapter::needs_extend) {
+    std::cerr << "Quantifying runs need a BDD package\n";
     return -1;
   }
 
@@ -450,9 +736,17 @@ run_cnf(int argc, char** argv)
     return -1;
   }
 
+  std::optional<std::vector<schedule_command>> schedule;
+  if (!schedule_file.empty()) {
+    schedule = parse_schedule(schedule_file, cnf->num_clauses(), cnf->var_to_level().size());
+    if (!schedule) {
+      return -1; // Parser error has been printed
+    }
+  }
+
   // =========================================================================
   // Initialise BDD manager
-  return run<Adapter>("cnf", cnf->var_to_level().size(), [&cnf](Adapter& adapter) {
+  return run<Adapter>("cnf", cnf->var_to_level().size(), [&](Adapter& adapter) {
     uint64_t solutions;
 
     // ========================================================================
@@ -461,7 +755,7 @@ run_cnf(int argc, char** argv)
     std::cout << json::field("clauses") << json::brace_open << json::endl << json::flush;
 
     const time_point t1                         = now();
-    std::vector<typename Adapter::dd_t> clauses = construct_clauses(adapter, *cnf);
+    std::vector<typename Adapter::dd_t> clauses = construct_clauses(adapter, *cnf, quantifying);
     const time_point t2                         = now();
 
     const time_duration clause_cons_time = duration_ms(t1, t2);
@@ -478,9 +772,19 @@ run_cnf(int argc, char** argv)
     std::cout << json::field("intermediate results") << json::brace_open << json::endl;
 #endif // BDD_BENCHMARK_STATS
 
+    // Quantifying runs are rejected for ZDDs above, whose adapters lack some of
+    // the operations they need
+    reduction<Adapter> ops(adapter);
+    typename Adapter::dd_t res = adapter.bot();
     const time_point t3        = now();
-    typename Adapter::dd_t res = conjoin(adapter, clauses.cbegin(), clauses.cend());
-    const time_point t4        = now();
+    if constexpr (!Adapter::needs_extend) {
+      res = schedule ? ops.run_schedule(std::move(clauses), *schedule, cnf->var_to_level())
+        : bucket_elimination ? ops.bucket_eliminate(std::move(clauses), cnf->var_to_level().size())
+                             : conjoin(adapter, clauses.cbegin(), clauses.cend());
+    } else {
+      res = conjoin(adapter, clauses.cbegin(), clauses.cend());
+    }
+    const time_point t4 = now();
 
     const time_duration apply_time = duration_ms(t3, t4);
 
@@ -490,10 +794,24 @@ run_cnf(int argc, char** argv)
     std::cout << json::field("largest size (nodes)") << json::value(largest_bdd) << json::endl;
     std::cout << json::brace_close << json::comma << json::endl;
 #endif // BDD_BENCHMARK_STATS
+    if (quantifying) {
+      const std::string_view method = schedule ? "schedule" : "bucket elimination";
+      std::cout << json::field("method") << json::value(method) << json::comma << json::endl;
+      std::cout << json::field("conjunctions") << json::value(ops.conjunctions) << json::comma
+                << json::endl;
+      std::cout << json::field("quantifications") << json::value(ops.quantifications)
+                << json::comma << json::endl;
+    }
     std::cout << json::field("final size (nodes)") << json::value(adapter.nodecount(res))
               << json::comma << json::endl;
     std::cout << json::field("time (ms)") << json::value(apply_time) << json::endl;
     std::cout << json::brace_close << json::comma << json::endl << json::flush;
+
+    if (quantifying) {
+      const bool satisfiable = res != adapter.bot();
+      std::cout << json::field("satisfiable") << json::value(satisfiable) << json::comma
+                << json::endl;
+    }
 
     // ========================================================================
     // Count number of solutions

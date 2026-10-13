@@ -1,0 +1,603 @@
+c 1
+c 2
+a 1
+c 3
+a 1
+c 4
+a 1
+c 5
+a 1
+c 6
+a 1
+c 7
+a 1
+c 8
+a 1
+c 9
+a 1
+c 10
+a 1
+c 11
+a 1
+c 12
+a 1
+c 13
+a 1
+c 14
+a 1
+c 15
+a 1
+c 16
+a 1
+q 1 32 63 94 125 156 187 218 249 280 311 342 373 404 435
+# Completed pigeon 0.  Quantified 15 variables
+c 17
+c 18 19 20
+a 3
+c 21 22 23
+a 3
+c 24 25 26
+a 3
+c 27 28 29
+a 3
+c 30 31 32
+a 3
+c 33 34 35
+a 3
+c 36 37 38
+a 3
+c 39 40 41
+a 3
+c 42 43 44
+a 3
+c 45 46 47
+a 3
+c 48 49 50
+a 3
+c 51 52 53
+a 3
+c 54 55 56
+a 3
+c 57 58 59
+a 3
+c 60 61 62
+a 3
+q 3 34 65 96 127 158 189 220 251 282 313 344 375 406 437
+# Completed pigeon 1.  Quantified 15 variables
+# Combine pigeon 1 with predecessors
+a 1
+i Before quantification for pigeon 1
+q 3 34 65 96 127 158 189 220 251 282 313 344 375 406 437 2 33 64 95 126 157 188 219 250 281 312 343 374 405 436
+i After quantification for pigeon 1
+c 63
+c 64 65 66
+a 3
+c 67 68 69
+a 3
+c 70 71 72
+a 3
+c 73 74 75
+a 3
+c 76 77 78
+a 3
+c 79 80 81
+a 3
+c 82 83 84
+a 3
+c 85 86 87
+a 3
+c 88 89 90
+a 3
+c 91 92 93
+a 3
+c 94 95 96
+a 3
+c 97 98 99
+a 3
+c 100 101 102
+a 3
+c 103 104 105
+a 3
+c 106 107 108
+a 3
+q 5 36 67 98 129 160 191 222 253 284 315 346 377 408 439
+# Completed pigeon 2.  Quantified 15 variables
+# Combine pigeon 2 with predecessors
+a 1
+i Before quantification for pigeon 2
+q 5 36 67 98 129 160 191 222 253 284 315 346 377 408 439 4 35 66 97 128 159 190 221 252 283 314 345 376 407 438
+i After quantification for pigeon 2
+c 109
+c 110 111 112
+a 3
+c 113 114 115
+a 3
+c 116 117 118
+a 3
+c 119 120 121
+a 3
+c 122 123 124
+a 3
+c 125 126 127
+a 3
+c 128 129 130
+a 3
+c 131 132 133
+a 3
+c 134 135 136
+a 3
+c 137 138 139
+a 3
+c 140 141 142
+a 3
+c 143 144 145
+a 3
+c 146 147 148
+a 3
+c 149 150 151
+a 3
+c 152 153 154
+a 3
+q 7 38 69 100 131 162 193 224 255 286 317 348 379 410 441
+# Completed pigeon 3.  Quantified 15 variables
+# Combine pigeon 3 with predecessors
+a 1
+i Before quantification for pigeon 3
+q 7 38 69 100 131 162 193 224 255 286 317 348 379 410 441 6 37 68 99 130 161 192 223 254 285 316 347 378 409 440
+i After quantification for pigeon 3
+c 155
+c 156 157 158
+a 3
+c 159 160 161
+a 3
+c 162 163 164
+a 3
+c 165 166 167
+a 3
+c 168 169 170
+a 3
+c 171 172 173
+a 3
+c 174 175 176
+a 3
+c 177 178 179
+a 3
+c 180 181 182
+a 3
+c 183 184 185
+a 3
+c 186 187 188
+a 3
+c 189 190 191
+a 3
+c 192 193 194
+a 3
+c 195 196 197
+a 3
+c 198 199 200
+a 3
+q 9 40 71 102 133 164 195 226 257 288 319 350 381 412 443
+# Completed pigeon 4.  Quantified 15 variables
+# Combine pigeon 4 with predecessors
+a 1
+i Before quantification for pigeon 4
+q 9 40 71 102 133 164 195 226 257 288 319 350 381 412 443 8 39 70 101 132 163 194 225 256 287 318 349 380 411 442
+i After quantification for pigeon 4
+c 201
+c 202 203 204
+a 3
+c 205 206 207
+a 3
+c 208 209 210
+a 3
+c 211 212 213
+a 3
+c 214 215 216
+a 3
+c 217 218 219
+a 3
+c 220 221 222
+a 3
+c 223 224 225
+a 3
+c 226 227 228
+a 3
+c 229 230 231
+a 3
+c 232 233 234
+a 3
+c 235 236 237
+a 3
+c 238 239 240
+a 3
+c 241 242 243
+a 3
+c 244 245 246
+a 3
+q 11 42 73 104 135 166 197 228 259 290 321 352 383 414 445
+# Completed pigeon 5.  Quantified 15 variables
+# Combine pigeon 5 with predecessors
+a 1
+i Before quantification for pigeon 5
+q 11 42 73 104 135 166 197 228 259 290 321 352 383 414 445 10 41 72 103 134 165 196 227 258 289 320 351 382 413 444
+i After quantification for pigeon 5
+c 247
+c 248 249 250
+a 3
+c 251 252 253
+a 3
+c 254 255 256
+a 3
+c 257 258 259
+a 3
+c 260 261 262
+a 3
+c 263 264 265
+a 3
+c 266 267 268
+a 3
+c 269 270 271
+a 3
+c 272 273 274
+a 3
+c 275 276 277
+a 3
+c 278 279 280
+a 3
+c 281 282 283
+a 3
+c 284 285 286
+a 3
+c 287 288 289
+a 3
+c 290 291 292
+a 3
+q 13 44 75 106 137 168 199 230 261 292 323 354 385 416 447
+# Completed pigeon 6.  Quantified 15 variables
+# Combine pigeon 6 with predecessors
+a 1
+i Before quantification for pigeon 6
+q 13 44 75 106 137 168 199 230 261 292 323 354 385 416 447 12 43 74 105 136 167 198 229 260 291 322 353 384 415 446
+i After quantification for pigeon 6
+c 293
+c 294 295 296
+a 3
+c 297 298 299
+a 3
+c 300 301 302
+a 3
+c 303 304 305
+a 3
+c 306 307 308
+a 3
+c 309 310 311
+a 3
+c 312 313 314
+a 3
+c 315 316 317
+a 3
+c 318 319 320
+a 3
+c 321 322 323
+a 3
+c 324 325 326
+a 3
+c 327 328 329
+a 3
+c 330 331 332
+a 3
+c 333 334 335
+a 3
+c 336 337 338
+a 3
+q 15 46 77 108 139 170 201 232 263 294 325 356 387 418 449
+# Completed pigeon 7.  Quantified 15 variables
+# Combine pigeon 7 with predecessors
+a 1
+i Before quantification for pigeon 7
+q 15 46 77 108 139 170 201 232 263 294 325 356 387 418 449 14 45 76 107 138 169 200 231 262 293 324 355 386 417 448
+i After quantification for pigeon 7
+c 339
+c 340 341 342
+a 3
+c 343 344 345
+a 3
+c 346 347 348
+a 3
+c 349 350 351
+a 3
+c 352 353 354
+a 3
+c 355 356 357
+a 3
+c 358 359 360
+a 3
+c 361 362 363
+a 3
+c 364 365 366
+a 3
+c 367 368 369
+a 3
+c 370 371 372
+a 3
+c 373 374 375
+a 3
+c 376 377 378
+a 3
+c 379 380 381
+a 3
+c 382 383 384
+a 3
+q 17 48 79 110 141 172 203 234 265 296 327 358 389 420 451
+# Completed pigeon 8.  Quantified 15 variables
+# Combine pigeon 8 with predecessors
+a 1
+i Before quantification for pigeon 8
+q 17 48 79 110 141 172 203 234 265 296 327 358 389 420 451 16 47 78 109 140 171 202 233 264 295 326 357 388 419 450
+i After quantification for pigeon 8
+c 385
+c 386 387 388
+a 3
+c 389 390 391
+a 3
+c 392 393 394
+a 3
+c 395 396 397
+a 3
+c 398 399 400
+a 3
+c 401 402 403
+a 3
+c 404 405 406
+a 3
+c 407 408 409
+a 3
+c 410 411 412
+a 3
+c 413 414 415
+a 3
+c 416 417 418
+a 3
+c 419 420 421
+a 3
+c 422 423 424
+a 3
+c 425 426 427
+a 3
+c 428 429 430
+a 3
+q 19 50 81 112 143 174 205 236 267 298 329 360 391 422 453
+# Completed pigeon 9.  Quantified 15 variables
+# Combine pigeon 9 with predecessors
+a 1
+i Before quantification for pigeon 9
+q 19 50 81 112 143 174 205 236 267 298 329 360 391 422 453 18 49 80 111 142 173 204 235 266 297 328 359 390 421 452
+i After quantification for pigeon 9
+c 431
+c 432 433 434
+a 3
+c 435 436 437
+a 3
+c 438 439 440
+a 3
+c 441 442 443
+a 3
+c 444 445 446
+a 3
+c 447 448 449
+a 3
+c 450 451 452
+a 3
+c 453 454 455
+a 3
+c 456 457 458
+a 3
+c 459 460 461
+a 3
+c 462 463 464
+a 3
+c 465 466 467
+a 3
+c 468 469 470
+a 3
+c 471 472 473
+a 3
+c 474 475 476
+a 3
+q 21 52 83 114 145 176 207 238 269 300 331 362 393 424 455
+# Completed pigeon 10.  Quantified 15 variables
+# Combine pigeon 10 with predecessors
+a 1
+i Before quantification for pigeon 10
+q 21 52 83 114 145 176 207 238 269 300 331 362 393 424 455 20 51 82 113 144 175 206 237 268 299 330 361 392 423 454
+i After quantification for pigeon 10
+c 477
+c 478 479 480
+a 3
+c 481 482 483
+a 3
+c 484 485 486
+a 3
+c 487 488 489
+a 3
+c 490 491 492
+a 3
+c 493 494 495
+a 3
+c 496 497 498
+a 3
+c 499 500 501
+a 3
+c 502 503 504
+a 3
+c 505 506 507
+a 3
+c 508 509 510
+a 3
+c 511 512 513
+a 3
+c 514 515 516
+a 3
+c 517 518 519
+a 3
+c 520 521 522
+a 3
+q 23 54 85 116 147 178 209 240 271 302 333 364 395 426 457
+# Completed pigeon 11.  Quantified 15 variables
+# Combine pigeon 11 with predecessors
+a 1
+i Before quantification for pigeon 11
+q 23 54 85 116 147 178 209 240 271 302 333 364 395 426 457 22 53 84 115 146 177 208 239 270 301 332 363 394 425 456
+i After quantification for pigeon 11
+c 523
+c 524 525 526
+a 3
+c 527 528 529
+a 3
+c 530 531 532
+a 3
+c 533 534 535
+a 3
+c 536 537 538
+a 3
+c 539 540 541
+a 3
+c 542 543 544
+a 3
+c 545 546 547
+a 3
+c 548 549 550
+a 3
+c 551 552 553
+a 3
+c 554 555 556
+a 3
+c 557 558 559
+a 3
+c 560 561 562
+a 3
+c 563 564 565
+a 3
+c 566 567 568
+a 3
+q 25 56 87 118 149 180 211 242 273 304 335 366 397 428 459
+# Completed pigeon 12.  Quantified 15 variables
+# Combine pigeon 12 with predecessors
+a 1
+i Before quantification for pigeon 12
+q 25 56 87 118 149 180 211 242 273 304 335 366 397 428 459 24 55 86 117 148 179 210 241 272 303 334 365 396 427 458
+i After quantification for pigeon 12
+c 569
+c 570 571 572
+a 3
+c 573 574 575
+a 3
+c 576 577 578
+a 3
+c 579 580 581
+a 3
+c 582 583 584
+a 3
+c 585 586 587
+a 3
+c 588 589 590
+a 3
+c 591 592 593
+a 3
+c 594 595 596
+a 3
+c 597 598 599
+a 3
+c 600 601 602
+a 3
+c 603 604 605
+a 3
+c 606 607 608
+a 3
+c 609 610 611
+a 3
+c 612 613 614
+a 3
+q 27 58 89 120 151 182 213 244 275 306 337 368 399 430 461
+# Completed pigeon 13.  Quantified 15 variables
+# Combine pigeon 13 with predecessors
+a 1
+i Before quantification for pigeon 13
+q 27 58 89 120 151 182 213 244 275 306 337 368 399 430 461 26 57 88 119 150 181 212 243 274 305 336 367 398 429 460
+i After quantification for pigeon 13
+c 615
+c 616 617 618
+a 3
+c 619 620 621
+a 3
+c 622 623 624
+a 3
+c 625 626 627
+a 3
+c 628 629 630
+a 3
+c 631 632 633
+a 3
+c 634 635 636
+a 3
+c 637 638 639
+a 3
+c 640 641 642
+a 3
+c 643 644 645
+a 3
+c 646 647 648
+a 3
+c 649 650 651
+a 3
+c 652 653 654
+a 3
+c 655 656 657
+a 3
+c 658 659 660
+a 3
+q 29 60 91 122 153 184 215 246 277 308 339 370 401 432 463
+# Completed pigeon 14.  Quantified 15 variables
+# Combine pigeon 14 with predecessors
+a 1
+i Before quantification for pigeon 14
+q 29 60 91 122 153 184 215 246 277 308 339 370 401 432 463 28 59 90 121 152 183 214 245 276 307 338 369 400 431 462
+i After quantification for pigeon 14
+c 661
+c 662
+a 1
+c 663
+a 1
+c 664
+a 1
+c 665
+a 1
+c 666
+a 1
+c 667
+a 1
+c 668
+a 1
+c 669
+a 1
+c 670
+a 1
+c 671
+a 1
+c 672
+a 1
+c 673
+a 1
+c 674
+a 1
+c 675
+a 1
+c 676
+a 1
+q 31 62 93 124 155 186 217 248 279 310 341 372 403 434 465
+# Completed pigeon 15.  Quantified 15 variables
+# Combine pigeon 15 with predecessors
+a 1
+i Before quantification for pigeon 15
+q 31 62 93 124 155 186 217 248 279 310 341 372 403 434 465 30 61 92 123 154 185 216 247 278 309 340 371 402 433 464
+i After quantification for pigeon 15

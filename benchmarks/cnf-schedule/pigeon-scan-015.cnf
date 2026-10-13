@@ -1,0 +1,1173 @@
+p cnf 465 676
+c Hole 0, pigeon 0: M=1 S=2
+c Hole 0, pigeon 1: M=3 S=4
+c Hole 0, pigeon 2: M=5 S=6
+c Hole 0, pigeon 3: M=7 S=8
+c Hole 0, pigeon 4: M=9 S=10
+c Hole 0, pigeon 5: M=11 S=12
+c Hole 0, pigeon 6: M=13 S=14
+c Hole 0, pigeon 7: M=15 S=16
+c Hole 0, pigeon 8: M=17 S=18
+c Hole 0, pigeon 9: M=19 S=20
+c Hole 0, pigeon 10: M=21 S=22
+c Hole 0, pigeon 11: M=23 S=24
+c Hole 0, pigeon 12: M=25 S=26
+c Hole 0, pigeon 13: M=27 S=28
+c Hole 0, pigeon 14: M=29 S=30
+c Hole 0, pigeon 15: M=31
+c Hole 1, pigeon 0: M=32 S=33
+c Hole 1, pigeon 1: M=34 S=35
+c Hole 1, pigeon 2: M=36 S=37
+c Hole 1, pigeon 3: M=38 S=39
+c Hole 1, pigeon 4: M=40 S=41
+c Hole 1, pigeon 5: M=42 S=43
+c Hole 1, pigeon 6: M=44 S=45
+c Hole 1, pigeon 7: M=46 S=47
+c Hole 1, pigeon 8: M=48 S=49
+c Hole 1, pigeon 9: M=50 S=51
+c Hole 1, pigeon 10: M=52 S=53
+c Hole 1, pigeon 11: M=54 S=55
+c Hole 1, pigeon 12: M=56 S=57
+c Hole 1, pigeon 13: M=58 S=59
+c Hole 1, pigeon 14: M=60 S=61
+c Hole 1, pigeon 15: M=62
+c Hole 2, pigeon 0: M=63 S=64
+c Hole 2, pigeon 1: M=65 S=66
+c Hole 2, pigeon 2: M=67 S=68
+c Hole 2, pigeon 3: M=69 S=70
+c Hole 2, pigeon 4: M=71 S=72
+c Hole 2, pigeon 5: M=73 S=74
+c Hole 2, pigeon 6: M=75 S=76
+c Hole 2, pigeon 7: M=77 S=78
+c Hole 2, pigeon 8: M=79 S=80
+c Hole 2, pigeon 9: M=81 S=82
+c Hole 2, pigeon 10: M=83 S=84
+c Hole 2, pigeon 11: M=85 S=86
+c Hole 2, pigeon 12: M=87 S=88
+c Hole 2, pigeon 13: M=89 S=90
+c Hole 2, pigeon 14: M=91 S=92
+c Hole 2, pigeon 15: M=93
+c Hole 3, pigeon 0: M=94 S=95
+c Hole 3, pigeon 1: M=96 S=97
+c Hole 3, pigeon 2: M=98 S=99
+c Hole 3, pigeon 3: M=100 S=101
+c Hole 3, pigeon 4: M=102 S=103
+c Hole 3, pigeon 5: M=104 S=105
+c Hole 3, pigeon 6: M=106 S=107
+c Hole 3, pigeon 7: M=108 S=109
+c Hole 3, pigeon 8: M=110 S=111
+c Hole 3, pigeon 9: M=112 S=113
+c Hole 3, pigeon 10: M=114 S=115
+c Hole 3, pigeon 11: M=116 S=117
+c Hole 3, pigeon 12: M=118 S=119
+c Hole 3, pigeon 13: M=120 S=121
+c Hole 3, pigeon 14: M=122 S=123
+c Hole 3, pigeon 15: M=124
+c Hole 4, pigeon 0: M=125 S=126
+c Hole 4, pigeon 1: M=127 S=128
+c Hole 4, pigeon 2: M=129 S=130
+c Hole 4, pigeon 3: M=131 S=132
+c Hole 4, pigeon 4: M=133 S=134
+c Hole 4, pigeon 5: M=135 S=136
+c Hole 4, pigeon 6: M=137 S=138
+c Hole 4, pigeon 7: M=139 S=140
+c Hole 4, pigeon 8: M=141 S=142
+c Hole 4, pigeon 9: M=143 S=144
+c Hole 4, pigeon 10: M=145 S=146
+c Hole 4, pigeon 11: M=147 S=148
+c Hole 4, pigeon 12: M=149 S=150
+c Hole 4, pigeon 13: M=151 S=152
+c Hole 4, pigeon 14: M=153 S=154
+c Hole 4, pigeon 15: M=155
+c Hole 5, pigeon 0: M=156 S=157
+c Hole 5, pigeon 1: M=158 S=159
+c Hole 5, pigeon 2: M=160 S=161
+c Hole 5, pigeon 3: M=162 S=163
+c Hole 5, pigeon 4: M=164 S=165
+c Hole 5, pigeon 5: M=166 S=167
+c Hole 5, pigeon 6: M=168 S=169
+c Hole 5, pigeon 7: M=170 S=171
+c Hole 5, pigeon 8: M=172 S=173
+c Hole 5, pigeon 9: M=174 S=175
+c Hole 5, pigeon 10: M=176 S=177
+c Hole 5, pigeon 11: M=178 S=179
+c Hole 5, pigeon 12: M=180 S=181
+c Hole 5, pigeon 13: M=182 S=183
+c Hole 5, pigeon 14: M=184 S=185
+c Hole 5, pigeon 15: M=186
+c Hole 6, pigeon 0: M=187 S=188
+c Hole 6, pigeon 1: M=189 S=190
+c Hole 6, pigeon 2: M=191 S=192
+c Hole 6, pigeon 3: M=193 S=194
+c Hole 6, pigeon 4: M=195 S=196
+c Hole 6, pigeon 5: M=197 S=198
+c Hole 6, pigeon 6: M=199 S=200
+c Hole 6, pigeon 7: M=201 S=202
+c Hole 6, pigeon 8: M=203 S=204
+c Hole 6, pigeon 9: M=205 S=206
+c Hole 6, pigeon 10: M=207 S=208
+c Hole 6, pigeon 11: M=209 S=210
+c Hole 6, pigeon 12: M=211 S=212
+c Hole 6, pigeon 13: M=213 S=214
+c Hole 6, pigeon 14: M=215 S=216
+c Hole 6, pigeon 15: M=217
+c Hole 7, pigeon 0: M=218 S=219
+c Hole 7, pigeon 1: M=220 S=221
+c Hole 7, pigeon 2: M=222 S=223
+c Hole 7, pigeon 3: M=224 S=225
+c Hole 7, pigeon 4: M=226 S=227
+c Hole 7, pigeon 5: M=228 S=229
+c Hole 7, pigeon 6: M=230 S=231
+c Hole 7, pigeon 7: M=232 S=233
+c Hole 7, pigeon 8: M=234 S=235
+c Hole 7, pigeon 9: M=236 S=237
+c Hole 7, pigeon 10: M=238 S=239
+c Hole 7, pigeon 11: M=240 S=241
+c Hole 7, pigeon 12: M=242 S=243
+c Hole 7, pigeon 13: M=244 S=245
+c Hole 7, pigeon 14: M=246 S=247
+c Hole 7, pigeon 15: M=248
+c Hole 8, pigeon 0: M=249 S=250
+c Hole 8, pigeon 1: M=251 S=252
+c Hole 8, pigeon 2: M=253 S=254
+c Hole 8, pigeon 3: M=255 S=256
+c Hole 8, pigeon 4: M=257 S=258
+c Hole 8, pigeon 5: M=259 S=260
+c Hole 8, pigeon 6: M=261 S=262
+c Hole 8, pigeon 7: M=263 S=264
+c Hole 8, pigeon 8: M=265 S=266
+c Hole 8, pigeon 9: M=267 S=268
+c Hole 8, pigeon 10: M=269 S=270
+c Hole 8, pigeon 11: M=271 S=272
+c Hole 8, pigeon 12: M=273 S=274
+c Hole 8, pigeon 13: M=275 S=276
+c Hole 8, pigeon 14: M=277 S=278
+c Hole 8, pigeon 15: M=279
+c Hole 9, pigeon 0: M=280 S=281
+c Hole 9, pigeon 1: M=282 S=283
+c Hole 9, pigeon 2: M=284 S=285
+c Hole 9, pigeon 3: M=286 S=287
+c Hole 9, pigeon 4: M=288 S=289
+c Hole 9, pigeon 5: M=290 S=291
+c Hole 9, pigeon 6: M=292 S=293
+c Hole 9, pigeon 7: M=294 S=295
+c Hole 9, pigeon 8: M=296 S=297
+c Hole 9, pigeon 9: M=298 S=299
+c Hole 9, pigeon 10: M=300 S=301
+c Hole 9, pigeon 11: M=302 S=303
+c Hole 9, pigeon 12: M=304 S=305
+c Hole 9, pigeon 13: M=306 S=307
+c Hole 9, pigeon 14: M=308 S=309
+c Hole 9, pigeon 15: M=310
+c Hole 10, pigeon 0: M=311 S=312
+c Hole 10, pigeon 1: M=313 S=314
+c Hole 10, pigeon 2: M=315 S=316
+c Hole 10, pigeon 3: M=317 S=318
+c Hole 10, pigeon 4: M=319 S=320
+c Hole 10, pigeon 5: M=321 S=322
+c Hole 10, pigeon 6: M=323 S=324
+c Hole 10, pigeon 7: M=325 S=326
+c Hole 10, pigeon 8: M=327 S=328
+c Hole 10, pigeon 9: M=329 S=330
+c Hole 10, pigeon 10: M=331 S=332
+c Hole 10, pigeon 11: M=333 S=334
+c Hole 10, pigeon 12: M=335 S=336
+c Hole 10, pigeon 13: M=337 S=338
+c Hole 10, pigeon 14: M=339 S=340
+c Hole 10, pigeon 15: M=341
+c Hole 11, pigeon 0: M=342 S=343
+c Hole 11, pigeon 1: M=344 S=345
+c Hole 11, pigeon 2: M=346 S=347
+c Hole 11, pigeon 3: M=348 S=349
+c Hole 11, pigeon 4: M=350 S=351
+c Hole 11, pigeon 5: M=352 S=353
+c Hole 11, pigeon 6: M=354 S=355
+c Hole 11, pigeon 7: M=356 S=357
+c Hole 11, pigeon 8: M=358 S=359
+c Hole 11, pigeon 9: M=360 S=361
+c Hole 11, pigeon 10: M=362 S=363
+c Hole 11, pigeon 11: M=364 S=365
+c Hole 11, pigeon 12: M=366 S=367
+c Hole 11, pigeon 13: M=368 S=369
+c Hole 11, pigeon 14: M=370 S=371
+c Hole 11, pigeon 15: M=372
+c Hole 12, pigeon 0: M=373 S=374
+c Hole 12, pigeon 1: M=375 S=376
+c Hole 12, pigeon 2: M=377 S=378
+c Hole 12, pigeon 3: M=379 S=380
+c Hole 12, pigeon 4: M=381 S=382
+c Hole 12, pigeon 5: M=383 S=384
+c Hole 12, pigeon 6: M=385 S=386
+c Hole 12, pigeon 7: M=387 S=388
+c Hole 12, pigeon 8: M=389 S=390
+c Hole 12, pigeon 9: M=391 S=392
+c Hole 12, pigeon 10: M=393 S=394
+c Hole 12, pigeon 11: M=395 S=396
+c Hole 12, pigeon 12: M=397 S=398
+c Hole 12, pigeon 13: M=399 S=400
+c Hole 12, pigeon 14: M=401 S=402
+c Hole 12, pigeon 15: M=403
+c Hole 13, pigeon 0: M=404 S=405
+c Hole 13, pigeon 1: M=406 S=407
+c Hole 13, pigeon 2: M=408 S=409
+c Hole 13, pigeon 3: M=410 S=411
+c Hole 13, pigeon 4: M=412 S=413
+c Hole 13, pigeon 5: M=414 S=415
+c Hole 13, pigeon 6: M=416 S=417
+c Hole 13, pigeon 7: M=418 S=419
+c Hole 13, pigeon 8: M=420 S=421
+c Hole 13, pigeon 9: M=422 S=423
+c Hole 13, pigeon 10: M=424 S=425
+c Hole 13, pigeon 11: M=426 S=427
+c Hole 13, pigeon 12: M=428 S=429
+c Hole 13, pigeon 13: M=430 S=431
+c Hole 13, pigeon 14: M=432 S=433
+c Hole 13, pigeon 15: M=434
+c Hole 14, pigeon 0: M=435 S=436
+c Hole 14, pigeon 1: M=437 S=438
+c Hole 14, pigeon 2: M=439 S=440
+c Hole 14, pigeon 3: M=441 S=442
+c Hole 14, pigeon 4: M=443 S=444
+c Hole 14, pigeon 5: M=445 S=446
+c Hole 14, pigeon 6: M=447 S=448
+c Hole 14, pigeon 7: M=449 S=450
+c Hole 14, pigeon 8: M=451 S=452
+c Hole 14, pigeon 9: M=453 S=454
+c Hole 14, pigeon 10: M=455 S=456
+c Hole 14, pigeon 11: M=457 S=458
+c Hole 14, pigeon 12: M=459 S=460
+c Hole 14, pigeon 13: M=461 S=462
+c Hole 14, pigeon 14: M=463 S=464
+c Hole 14, pigeon 15: M=465
+c Pigeon 0 must be in some hole
+1 32 63 94 125 156 187 218 249 280 311 342 373 404 435 0
+c AtMost1 constraint for hole 0, pigeon 0
+-1 2 0
+c AtMost1 constraint for hole 1, pigeon 0
+-32 33 0
+c AtMost1 constraint for hole 2, pigeon 0
+-63 64 0
+c AtMost1 constraint for hole 3, pigeon 0
+-94 95 0
+c AtMost1 constraint for hole 4, pigeon 0
+-125 126 0
+c AtMost1 constraint for hole 5, pigeon 0
+-156 157 0
+c AtMost1 constraint for hole 6, pigeon 0
+-187 188 0
+c AtMost1 constraint for hole 7, pigeon 0
+-218 219 0
+c AtMost1 constraint for hole 8, pigeon 0
+-249 250 0
+c AtMost1 constraint for hole 9, pigeon 0
+-280 281 0
+c AtMost1 constraint for hole 10, pigeon 0
+-311 312 0
+c AtMost1 constraint for hole 11, pigeon 0
+-342 343 0
+c AtMost1 constraint for hole 12, pigeon 0
+-373 374 0
+c AtMost1 constraint for hole 13, pigeon 0
+-404 405 0
+c AtMost1 constraint for hole 14, pigeon 0
+-435 436 0
+c Pigeon 1 must be in some hole
+3 34 65 96 127 158 189 220 251 282 313 344 375 406 437 0
+c AtMost1 constraint for hole 0, pigeon 1
+-3 4 0
+-2 -3 0
+-2 4 0
+c AtMost1 constraint for hole 1, pigeon 1
+-34 35 0
+-33 -34 0
+-33 35 0
+c AtMost1 constraint for hole 2, pigeon 1
+-65 66 0
+-64 -65 0
+-64 66 0
+c AtMost1 constraint for hole 3, pigeon 1
+-96 97 0
+-95 -96 0
+-95 97 0
+c AtMost1 constraint for hole 4, pigeon 1
+-127 128 0
+-126 -127 0
+-126 128 0
+c AtMost1 constraint for hole 5, pigeon 1
+-158 159 0
+-157 -158 0
+-157 159 0
+c AtMost1 constraint for hole 6, pigeon 1
+-189 190 0
+-188 -189 0
+-188 190 0
+c AtMost1 constraint for hole 7, pigeon 1
+-220 221 0
+-219 -220 0
+-219 221 0
+c AtMost1 constraint for hole 8, pigeon 1
+-251 252 0
+-250 -251 0
+-250 252 0
+c AtMost1 constraint for hole 9, pigeon 1
+-282 283 0
+-281 -282 0
+-281 283 0
+c AtMost1 constraint for hole 10, pigeon 1
+-313 314 0
+-312 -313 0
+-312 314 0
+c AtMost1 constraint for hole 11, pigeon 1
+-344 345 0
+-343 -344 0
+-343 345 0
+c AtMost1 constraint for hole 12, pigeon 1
+-375 376 0
+-374 -375 0
+-374 376 0
+c AtMost1 constraint for hole 13, pigeon 1
+-406 407 0
+-405 -406 0
+-405 407 0
+c AtMost1 constraint for hole 14, pigeon 1
+-437 438 0
+-436 -437 0
+-436 438 0
+c Pigeon 2 must be in some hole
+5 36 67 98 129 160 191 222 253 284 315 346 377 408 439 0
+c AtMost1 constraint for hole 0, pigeon 2
+-5 6 0
+-4 -5 0
+-4 6 0
+c AtMost1 constraint for hole 1, pigeon 2
+-36 37 0
+-35 -36 0
+-35 37 0
+c AtMost1 constraint for hole 2, pigeon 2
+-67 68 0
+-66 -67 0
+-66 68 0
+c AtMost1 constraint for hole 3, pigeon 2
+-98 99 0
+-97 -98 0
+-97 99 0
+c AtMost1 constraint for hole 4, pigeon 2
+-129 130 0
+-128 -129 0
+-128 130 0
+c AtMost1 constraint for hole 5, pigeon 2
+-160 161 0
+-159 -160 0
+-159 161 0
+c AtMost1 constraint for hole 6, pigeon 2
+-191 192 0
+-190 -191 0
+-190 192 0
+c AtMost1 constraint for hole 7, pigeon 2
+-222 223 0
+-221 -222 0
+-221 223 0
+c AtMost1 constraint for hole 8, pigeon 2
+-253 254 0
+-252 -253 0
+-252 254 0
+c AtMost1 constraint for hole 9, pigeon 2
+-284 285 0
+-283 -284 0
+-283 285 0
+c AtMost1 constraint for hole 10, pigeon 2
+-315 316 0
+-314 -315 0
+-314 316 0
+c AtMost1 constraint for hole 11, pigeon 2
+-346 347 0
+-345 -346 0
+-345 347 0
+c AtMost1 constraint for hole 12, pigeon 2
+-377 378 0
+-376 -377 0
+-376 378 0
+c AtMost1 constraint for hole 13, pigeon 2
+-408 409 0
+-407 -408 0
+-407 409 0
+c AtMost1 constraint for hole 14, pigeon 2
+-439 440 0
+-438 -439 0
+-438 440 0
+c Pigeon 3 must be in some hole
+7 38 69 100 131 162 193 224 255 286 317 348 379 410 441 0
+c AtMost1 constraint for hole 0, pigeon 3
+-7 8 0
+-6 -7 0
+-6 8 0
+c AtMost1 constraint for hole 1, pigeon 3
+-38 39 0
+-37 -38 0
+-37 39 0
+c AtMost1 constraint for hole 2, pigeon 3
+-69 70 0
+-68 -69 0
+-68 70 0
+c AtMost1 constraint for hole 3, pigeon 3
+-100 101 0
+-99 -100 0
+-99 101 0
+c AtMost1 constraint for hole 4, pigeon 3
+-131 132 0
+-130 -131 0
+-130 132 0
+c AtMost1 constraint for hole 5, pigeon 3
+-162 163 0
+-161 -162 0
+-161 163 0
+c AtMost1 constraint for hole 6, pigeon 3
+-193 194 0
+-192 -193 0
+-192 194 0
+c AtMost1 constraint for hole 7, pigeon 3
+-224 225 0
+-223 -224 0
+-223 225 0
+c AtMost1 constraint for hole 8, pigeon 3
+-255 256 0
+-254 -255 0
+-254 256 0
+c AtMost1 constraint for hole 9, pigeon 3
+-286 287 0
+-285 -286 0
+-285 287 0
+c AtMost1 constraint for hole 10, pigeon 3
+-317 318 0
+-316 -317 0
+-316 318 0
+c AtMost1 constraint for hole 11, pigeon 3
+-348 349 0
+-347 -348 0
+-347 349 0
+c AtMost1 constraint for hole 12, pigeon 3
+-379 380 0
+-378 -379 0
+-378 380 0
+c AtMost1 constraint for hole 13, pigeon 3
+-410 411 0
+-409 -410 0
+-409 411 0
+c AtMost1 constraint for hole 14, pigeon 3
+-441 442 0
+-440 -441 0
+-440 442 0
+c Pigeon 4 must be in some hole
+9 40 71 102 133 164 195 226 257 288 319 350 381 412 443 0
+c AtMost1 constraint for hole 0, pigeon 4
+-9 10 0
+-8 -9 0
+-8 10 0
+c AtMost1 constraint for hole 1, pigeon 4
+-40 41 0
+-39 -40 0
+-39 41 0
+c AtMost1 constraint for hole 2, pigeon 4
+-71 72 0
+-70 -71 0
+-70 72 0
+c AtMost1 constraint for hole 3, pigeon 4
+-102 103 0
+-101 -102 0
+-101 103 0
+c AtMost1 constraint for hole 4, pigeon 4
+-133 134 0
+-132 -133 0
+-132 134 0
+c AtMost1 constraint for hole 5, pigeon 4
+-164 165 0
+-163 -164 0
+-163 165 0
+c AtMost1 constraint for hole 6, pigeon 4
+-195 196 0
+-194 -195 0
+-194 196 0
+c AtMost1 constraint for hole 7, pigeon 4
+-226 227 0
+-225 -226 0
+-225 227 0
+c AtMost1 constraint for hole 8, pigeon 4
+-257 258 0
+-256 -257 0
+-256 258 0
+c AtMost1 constraint for hole 9, pigeon 4
+-288 289 0
+-287 -288 0
+-287 289 0
+c AtMost1 constraint for hole 10, pigeon 4
+-319 320 0
+-318 -319 0
+-318 320 0
+c AtMost1 constraint for hole 11, pigeon 4
+-350 351 0
+-349 -350 0
+-349 351 0
+c AtMost1 constraint for hole 12, pigeon 4
+-381 382 0
+-380 -381 0
+-380 382 0
+c AtMost1 constraint for hole 13, pigeon 4
+-412 413 0
+-411 -412 0
+-411 413 0
+c AtMost1 constraint for hole 14, pigeon 4
+-443 444 0
+-442 -443 0
+-442 444 0
+c Pigeon 5 must be in some hole
+11 42 73 104 135 166 197 228 259 290 321 352 383 414 445 0
+c AtMost1 constraint for hole 0, pigeon 5
+-11 12 0
+-10 -11 0
+-10 12 0
+c AtMost1 constraint for hole 1, pigeon 5
+-42 43 0
+-41 -42 0
+-41 43 0
+c AtMost1 constraint for hole 2, pigeon 5
+-73 74 0
+-72 -73 0
+-72 74 0
+c AtMost1 constraint for hole 3, pigeon 5
+-104 105 0
+-103 -104 0
+-103 105 0
+c AtMost1 constraint for hole 4, pigeon 5
+-135 136 0
+-134 -135 0
+-134 136 0
+c AtMost1 constraint for hole 5, pigeon 5
+-166 167 0
+-165 -166 0
+-165 167 0
+c AtMost1 constraint for hole 6, pigeon 5
+-197 198 0
+-196 -197 0
+-196 198 0
+c AtMost1 constraint for hole 7, pigeon 5
+-228 229 0
+-227 -228 0
+-227 229 0
+c AtMost1 constraint for hole 8, pigeon 5
+-259 260 0
+-258 -259 0
+-258 260 0
+c AtMost1 constraint for hole 9, pigeon 5
+-290 291 0
+-289 -290 0
+-289 291 0
+c AtMost1 constraint for hole 10, pigeon 5
+-321 322 0
+-320 -321 0
+-320 322 0
+c AtMost1 constraint for hole 11, pigeon 5
+-352 353 0
+-351 -352 0
+-351 353 0
+c AtMost1 constraint for hole 12, pigeon 5
+-383 384 0
+-382 -383 0
+-382 384 0
+c AtMost1 constraint for hole 13, pigeon 5
+-414 415 0
+-413 -414 0
+-413 415 0
+c AtMost1 constraint for hole 14, pigeon 5
+-445 446 0
+-444 -445 0
+-444 446 0
+c Pigeon 6 must be in some hole
+13 44 75 106 137 168 199 230 261 292 323 354 385 416 447 0
+c AtMost1 constraint for hole 0, pigeon 6
+-13 14 0
+-12 -13 0
+-12 14 0
+c AtMost1 constraint for hole 1, pigeon 6
+-44 45 0
+-43 -44 0
+-43 45 0
+c AtMost1 constraint for hole 2, pigeon 6
+-75 76 0
+-74 -75 0
+-74 76 0
+c AtMost1 constraint for hole 3, pigeon 6
+-106 107 0
+-105 -106 0
+-105 107 0
+c AtMost1 constraint for hole 4, pigeon 6
+-137 138 0
+-136 -137 0
+-136 138 0
+c AtMost1 constraint for hole 5, pigeon 6
+-168 169 0
+-167 -168 0
+-167 169 0
+c AtMost1 constraint for hole 6, pigeon 6
+-199 200 0
+-198 -199 0
+-198 200 0
+c AtMost1 constraint for hole 7, pigeon 6
+-230 231 0
+-229 -230 0
+-229 231 0
+c AtMost1 constraint for hole 8, pigeon 6
+-261 262 0
+-260 -261 0
+-260 262 0
+c AtMost1 constraint for hole 9, pigeon 6
+-292 293 0
+-291 -292 0
+-291 293 0
+c AtMost1 constraint for hole 10, pigeon 6
+-323 324 0
+-322 -323 0
+-322 324 0
+c AtMost1 constraint for hole 11, pigeon 6
+-354 355 0
+-353 -354 0
+-353 355 0
+c AtMost1 constraint for hole 12, pigeon 6
+-385 386 0
+-384 -385 0
+-384 386 0
+c AtMost1 constraint for hole 13, pigeon 6
+-416 417 0
+-415 -416 0
+-415 417 0
+c AtMost1 constraint for hole 14, pigeon 6
+-447 448 0
+-446 -447 0
+-446 448 0
+c Pigeon 7 must be in some hole
+15 46 77 108 139 170 201 232 263 294 325 356 387 418 449 0
+c AtMost1 constraint for hole 0, pigeon 7
+-15 16 0
+-14 -15 0
+-14 16 0
+c AtMost1 constraint for hole 1, pigeon 7
+-46 47 0
+-45 -46 0
+-45 47 0
+c AtMost1 constraint for hole 2, pigeon 7
+-77 78 0
+-76 -77 0
+-76 78 0
+c AtMost1 constraint for hole 3, pigeon 7
+-108 109 0
+-107 -108 0
+-107 109 0
+c AtMost1 constraint for hole 4, pigeon 7
+-139 140 0
+-138 -139 0
+-138 140 0
+c AtMost1 constraint for hole 5, pigeon 7
+-170 171 0
+-169 -170 0
+-169 171 0
+c AtMost1 constraint for hole 6, pigeon 7
+-201 202 0
+-200 -201 0
+-200 202 0
+c AtMost1 constraint for hole 7, pigeon 7
+-232 233 0
+-231 -232 0
+-231 233 0
+c AtMost1 constraint for hole 8, pigeon 7
+-263 264 0
+-262 -263 0
+-262 264 0
+c AtMost1 constraint for hole 9, pigeon 7
+-294 295 0
+-293 -294 0
+-293 295 0
+c AtMost1 constraint for hole 10, pigeon 7
+-325 326 0
+-324 -325 0
+-324 326 0
+c AtMost1 constraint for hole 11, pigeon 7
+-356 357 0
+-355 -356 0
+-355 357 0
+c AtMost1 constraint for hole 12, pigeon 7
+-387 388 0
+-386 -387 0
+-386 388 0
+c AtMost1 constraint for hole 13, pigeon 7
+-418 419 0
+-417 -418 0
+-417 419 0
+c AtMost1 constraint for hole 14, pigeon 7
+-449 450 0
+-448 -449 0
+-448 450 0
+c Pigeon 8 must be in some hole
+17 48 79 110 141 172 203 234 265 296 327 358 389 420 451 0
+c AtMost1 constraint for hole 0, pigeon 8
+-17 18 0
+-16 -17 0
+-16 18 0
+c AtMost1 constraint for hole 1, pigeon 8
+-48 49 0
+-47 -48 0
+-47 49 0
+c AtMost1 constraint for hole 2, pigeon 8
+-79 80 0
+-78 -79 0
+-78 80 0
+c AtMost1 constraint for hole 3, pigeon 8
+-110 111 0
+-109 -110 0
+-109 111 0
+c AtMost1 constraint for hole 4, pigeon 8
+-141 142 0
+-140 -141 0
+-140 142 0
+c AtMost1 constraint for hole 5, pigeon 8
+-172 173 0
+-171 -172 0
+-171 173 0
+c AtMost1 constraint for hole 6, pigeon 8
+-203 204 0
+-202 -203 0
+-202 204 0
+c AtMost1 constraint for hole 7, pigeon 8
+-234 235 0
+-233 -234 0
+-233 235 0
+c AtMost1 constraint for hole 8, pigeon 8
+-265 266 0
+-264 -265 0
+-264 266 0
+c AtMost1 constraint for hole 9, pigeon 8
+-296 297 0
+-295 -296 0
+-295 297 0
+c AtMost1 constraint for hole 10, pigeon 8
+-327 328 0
+-326 -327 0
+-326 328 0
+c AtMost1 constraint for hole 11, pigeon 8
+-358 359 0
+-357 -358 0
+-357 359 0
+c AtMost1 constraint for hole 12, pigeon 8
+-389 390 0
+-388 -389 0
+-388 390 0
+c AtMost1 constraint for hole 13, pigeon 8
+-420 421 0
+-419 -420 0
+-419 421 0
+c AtMost1 constraint for hole 14, pigeon 8
+-451 452 0
+-450 -451 0
+-450 452 0
+c Pigeon 9 must be in some hole
+19 50 81 112 143 174 205 236 267 298 329 360 391 422 453 0
+c AtMost1 constraint for hole 0, pigeon 9
+-19 20 0
+-18 -19 0
+-18 20 0
+c AtMost1 constraint for hole 1, pigeon 9
+-50 51 0
+-49 -50 0
+-49 51 0
+c AtMost1 constraint for hole 2, pigeon 9
+-81 82 0
+-80 -81 0
+-80 82 0
+c AtMost1 constraint for hole 3, pigeon 9
+-112 113 0
+-111 -112 0
+-111 113 0
+c AtMost1 constraint for hole 4, pigeon 9
+-143 144 0
+-142 -143 0
+-142 144 0
+c AtMost1 constraint for hole 5, pigeon 9
+-174 175 0
+-173 -174 0
+-173 175 0
+c AtMost1 constraint for hole 6, pigeon 9
+-205 206 0
+-204 -205 0
+-204 206 0
+c AtMost1 constraint for hole 7, pigeon 9
+-236 237 0
+-235 -236 0
+-235 237 0
+c AtMost1 constraint for hole 8, pigeon 9
+-267 268 0
+-266 -267 0
+-266 268 0
+c AtMost1 constraint for hole 9, pigeon 9
+-298 299 0
+-297 -298 0
+-297 299 0
+c AtMost1 constraint for hole 10, pigeon 9
+-329 330 0
+-328 -329 0
+-328 330 0
+c AtMost1 constraint for hole 11, pigeon 9
+-360 361 0
+-359 -360 0
+-359 361 0
+c AtMost1 constraint for hole 12, pigeon 9
+-391 392 0
+-390 -391 0
+-390 392 0
+c AtMost1 constraint for hole 13, pigeon 9
+-422 423 0
+-421 -422 0
+-421 423 0
+c AtMost1 constraint for hole 14, pigeon 9
+-453 454 0
+-452 -453 0
+-452 454 0
+c Pigeon 10 must be in some hole
+21 52 83 114 145 176 207 238 269 300 331 362 393 424 455 0
+c AtMost1 constraint for hole 0, pigeon 10
+-21 22 0
+-20 -21 0
+-20 22 0
+c AtMost1 constraint for hole 1, pigeon 10
+-52 53 0
+-51 -52 0
+-51 53 0
+c AtMost1 constraint for hole 2, pigeon 10
+-83 84 0
+-82 -83 0
+-82 84 0
+c AtMost1 constraint for hole 3, pigeon 10
+-114 115 0
+-113 -114 0
+-113 115 0
+c AtMost1 constraint for hole 4, pigeon 10
+-145 146 0
+-144 -145 0
+-144 146 0
+c AtMost1 constraint for hole 5, pigeon 10
+-176 177 0
+-175 -176 0
+-175 177 0
+c AtMost1 constraint for hole 6, pigeon 10
+-207 208 0
+-206 -207 0
+-206 208 0
+c AtMost1 constraint for hole 7, pigeon 10
+-238 239 0
+-237 -238 0
+-237 239 0
+c AtMost1 constraint for hole 8, pigeon 10
+-269 270 0
+-268 -269 0
+-268 270 0
+c AtMost1 constraint for hole 9, pigeon 10
+-300 301 0
+-299 -300 0
+-299 301 0
+c AtMost1 constraint for hole 10, pigeon 10
+-331 332 0
+-330 -331 0
+-330 332 0
+c AtMost1 constraint for hole 11, pigeon 10
+-362 363 0
+-361 -362 0
+-361 363 0
+c AtMost1 constraint for hole 12, pigeon 10
+-393 394 0
+-392 -393 0
+-392 394 0
+c AtMost1 constraint for hole 13, pigeon 10
+-424 425 0
+-423 -424 0
+-423 425 0
+c AtMost1 constraint for hole 14, pigeon 10
+-455 456 0
+-454 -455 0
+-454 456 0
+c Pigeon 11 must be in some hole
+23 54 85 116 147 178 209 240 271 302 333 364 395 426 457 0
+c AtMost1 constraint for hole 0, pigeon 11
+-23 24 0
+-22 -23 0
+-22 24 0
+c AtMost1 constraint for hole 1, pigeon 11
+-54 55 0
+-53 -54 0
+-53 55 0
+c AtMost1 constraint for hole 2, pigeon 11
+-85 86 0
+-84 -85 0
+-84 86 0
+c AtMost1 constraint for hole 3, pigeon 11
+-116 117 0
+-115 -116 0
+-115 117 0
+c AtMost1 constraint for hole 4, pigeon 11
+-147 148 0
+-146 -147 0
+-146 148 0
+c AtMost1 constraint for hole 5, pigeon 11
+-178 179 0
+-177 -178 0
+-177 179 0
+c AtMost1 constraint for hole 6, pigeon 11
+-209 210 0
+-208 -209 0
+-208 210 0
+c AtMost1 constraint for hole 7, pigeon 11
+-240 241 0
+-239 -240 0
+-239 241 0
+c AtMost1 constraint for hole 8, pigeon 11
+-271 272 0
+-270 -271 0
+-270 272 0
+c AtMost1 constraint for hole 9, pigeon 11
+-302 303 0
+-301 -302 0
+-301 303 0
+c AtMost1 constraint for hole 10, pigeon 11
+-333 334 0
+-332 -333 0
+-332 334 0
+c AtMost1 constraint for hole 11, pigeon 11
+-364 365 0
+-363 -364 0
+-363 365 0
+c AtMost1 constraint for hole 12, pigeon 11
+-395 396 0
+-394 -395 0
+-394 396 0
+c AtMost1 constraint for hole 13, pigeon 11
+-426 427 0
+-425 -426 0
+-425 427 0
+c AtMost1 constraint for hole 14, pigeon 11
+-457 458 0
+-456 -457 0
+-456 458 0
+c Pigeon 12 must be in some hole
+25 56 87 118 149 180 211 242 273 304 335 366 397 428 459 0
+c AtMost1 constraint for hole 0, pigeon 12
+-25 26 0
+-24 -25 0
+-24 26 0
+c AtMost1 constraint for hole 1, pigeon 12
+-56 57 0
+-55 -56 0
+-55 57 0
+c AtMost1 constraint for hole 2, pigeon 12
+-87 88 0
+-86 -87 0
+-86 88 0
+c AtMost1 constraint for hole 3, pigeon 12
+-118 119 0
+-117 -118 0
+-117 119 0
+c AtMost1 constraint for hole 4, pigeon 12
+-149 150 0
+-148 -149 0
+-148 150 0
+c AtMost1 constraint for hole 5, pigeon 12
+-180 181 0
+-179 -180 0
+-179 181 0
+c AtMost1 constraint for hole 6, pigeon 12
+-211 212 0
+-210 -211 0
+-210 212 0
+c AtMost1 constraint for hole 7, pigeon 12
+-242 243 0
+-241 -242 0
+-241 243 0
+c AtMost1 constraint for hole 8, pigeon 12
+-273 274 0
+-272 -273 0
+-272 274 0
+c AtMost1 constraint for hole 9, pigeon 12
+-304 305 0
+-303 -304 0
+-303 305 0
+c AtMost1 constraint for hole 10, pigeon 12
+-335 336 0
+-334 -335 0
+-334 336 0
+c AtMost1 constraint for hole 11, pigeon 12
+-366 367 0
+-365 -366 0
+-365 367 0
+c AtMost1 constraint for hole 12, pigeon 12
+-397 398 0
+-396 -397 0
+-396 398 0
+c AtMost1 constraint for hole 13, pigeon 12
+-428 429 0
+-427 -428 0
+-427 429 0
+c AtMost1 constraint for hole 14, pigeon 12
+-459 460 0
+-458 -459 0
+-458 460 0
+c Pigeon 13 must be in some hole
+27 58 89 120 151 182 213 244 275 306 337 368 399 430 461 0
+c AtMost1 constraint for hole 0, pigeon 13
+-27 28 0
+-26 -27 0
+-26 28 0
+c AtMost1 constraint for hole 1, pigeon 13
+-58 59 0
+-57 -58 0
+-57 59 0
+c AtMost1 constraint for hole 2, pigeon 13
+-89 90 0
+-88 -89 0
+-88 90 0
+c AtMost1 constraint for hole 3, pigeon 13
+-120 121 0
+-119 -120 0
+-119 121 0
+c AtMost1 constraint for hole 4, pigeon 13
+-151 152 0
+-150 -151 0
+-150 152 0
+c AtMost1 constraint for hole 5, pigeon 13
+-182 183 0
+-181 -182 0
+-181 183 0
+c AtMost1 constraint for hole 6, pigeon 13
+-213 214 0
+-212 -213 0
+-212 214 0
+c AtMost1 constraint for hole 7, pigeon 13
+-244 245 0
+-243 -244 0
+-243 245 0
+c AtMost1 constraint for hole 8, pigeon 13
+-275 276 0
+-274 -275 0
+-274 276 0
+c AtMost1 constraint for hole 9, pigeon 13
+-306 307 0
+-305 -306 0
+-305 307 0
+c AtMost1 constraint for hole 10, pigeon 13
+-337 338 0
+-336 -337 0
+-336 338 0
+c AtMost1 constraint for hole 11, pigeon 13
+-368 369 0
+-367 -368 0
+-367 369 0
+c AtMost1 constraint for hole 12, pigeon 13
+-399 400 0
+-398 -399 0
+-398 400 0
+c AtMost1 constraint for hole 13, pigeon 13
+-430 431 0
+-429 -430 0
+-429 431 0
+c AtMost1 constraint for hole 14, pigeon 13
+-461 462 0
+-460 -461 0
+-460 462 0
+c Pigeon 14 must be in some hole
+29 60 91 122 153 184 215 246 277 308 339 370 401 432 463 0
+c AtMost1 constraint for hole 0, pigeon 14
+-29 30 0
+-28 -29 0
+-28 30 0
+c AtMost1 constraint for hole 1, pigeon 14
+-60 61 0
+-59 -60 0
+-59 61 0
+c AtMost1 constraint for hole 2, pigeon 14
+-91 92 0
+-90 -91 0
+-90 92 0
+c AtMost1 constraint for hole 3, pigeon 14
+-122 123 0
+-121 -122 0
+-121 123 0
+c AtMost1 constraint for hole 4, pigeon 14
+-153 154 0
+-152 -153 0
+-152 154 0
+c AtMost1 constraint for hole 5, pigeon 14
+-184 185 0
+-183 -184 0
+-183 185 0
+c AtMost1 constraint for hole 6, pigeon 14
+-215 216 0
+-214 -215 0
+-214 216 0
+c AtMost1 constraint for hole 7, pigeon 14
+-246 247 0
+-245 -246 0
+-245 247 0
+c AtMost1 constraint for hole 8, pigeon 14
+-277 278 0
+-276 -277 0
+-276 278 0
+c AtMost1 constraint for hole 9, pigeon 14
+-308 309 0
+-307 -308 0
+-307 309 0
+c AtMost1 constraint for hole 10, pigeon 14
+-339 340 0
+-338 -339 0
+-338 340 0
+c AtMost1 constraint for hole 11, pigeon 14
+-370 371 0
+-369 -370 0
+-369 371 0
+c AtMost1 constraint for hole 12, pigeon 14
+-401 402 0
+-400 -401 0
+-400 402 0
+c AtMost1 constraint for hole 13, pigeon 14
+-432 433 0
+-431 -432 0
+-431 433 0
+c AtMost1 constraint for hole 14, pigeon 14
+-463 464 0
+-462 -463 0
+-462 464 0
+c Pigeon 15 must be in some hole
+31 62 93 124 155 186 217 248 279 310 341 372 403 434 465 0
+c AtMost1 constraint for hole 0, pigeon 15
+-30 -31 0
+c AtMost1 constraint for hole 1, pigeon 15
+-61 -62 0
+c AtMost1 constraint for hole 2, pigeon 15
+-92 -93 0
+c AtMost1 constraint for hole 3, pigeon 15
+-123 -124 0
+c AtMost1 constraint for hole 4, pigeon 15
+-154 -155 0
+c AtMost1 constraint for hole 5, pigeon 15
+-185 -186 0
+c AtMost1 constraint for hole 6, pigeon 15
+-216 -217 0
+c AtMost1 constraint for hole 7, pigeon 15
+-247 -248 0
+c AtMost1 constraint for hole 8, pigeon 15
+-278 -279 0
+c AtMost1 constraint for hole 9, pigeon 15
+-309 -310 0
+c AtMost1 constraint for hole 10, pigeon 15
+-340 -341 0
+c AtMost1 constraint for hole 11, pigeon 15
+-371 -372 0
+c AtMost1 constraint for hole 12, pigeon 15
+-402 -403 0
+c AtMost1 constraint for hole 13, pigeon 15
+-433 -434 0
+c AtMost1 constraint for hole 14, pigeon 15
+-464 -465 0

@@ -412,6 +412,35 @@ variable and clause orders.
 ./build/src/${LIB}_cnf_${KIND} -f benchmarks/cnf/sample.cnf
 ```
 
+The benchmark can be configured with the following options:
+
+- **`-c`**
+
+  Count the satisfying assignments of the conjunction.
+
+- **`-s <path>`**
+
+  Instead of the balanced conjunction, follow the schedule in the given file,
+  which interleaves conjunctions with existential quantification and decides
+  whether the CNF is satisfiable. The format is that of the SAT solver `tbsat`
+  of Bryant's TBUDDY package, see [benchmarks/cnf-schedule](benchmarks/cnf-schedule).
+
+  ```bash
+  ./build/src/${LIB}_cnf_${KIND} -f benchmarks/cnf-schedule/pigeon-scan-015.cnf -s benchmarks/cnf-schedule/pigeon-scan-015.schedule
+  ```
+
+- **`-b`**
+
+  Instead of the balanced conjunction, decide whether the CNF is satisfiable by
+  bucket elimination as `tbsat` performs it, see
+  [benchmarks/cnf-bucket](benchmarks/cnf-bucket).
+
+  ```bash
+  ./build/src/${LIB}_cnf_${KIND} -f benchmarks/cnf-bucket/urquhart-li-03.cnf -b
+  ```
+
+The options `-s` and `-b` are not supported for ZDDs.
+
 
 ### Game Of Life
 
