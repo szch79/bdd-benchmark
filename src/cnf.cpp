@@ -509,7 +509,7 @@ run_cnf(int argc, char** argv)
 
       std::cout << json::field("result") << json::value(solutions) << json::comma << json::endl;
       std::cout << json::field("time (ms)") << json::value(counting_time) << json::endl;
-      std::cout << json::brace_close << json::endl << json::flush;
+      std::cout << json::brace_close << json::comma << json::endl << json::flush;
     }
 
     // ========================================================================
