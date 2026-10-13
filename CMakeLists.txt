@@ -126,6 +126,13 @@ if (SYLVAN)
   add_subdirectory (external/sylvan sylvan EXCLUDE_FROM_ALL)
 endif (SYLVAN)
 
+# TBUDDY (Randal E. Bryant - Carnegie Mellon University, United States of America), BuDDy
+# generating clausal proofs, built for the CNF benchmark only
+option(TBUDDY "Build for TBUDDY" ON)
+if (TBUDDY)
+  add_subdirectory(external/tbuddy tbuddy EXCLUDE_FROM_ALL)
+endif (TBUDDY)
+
 # ---------------------------------------------------------------------------- #
 # BLIF parser
 add_subdirectory (external/blifparse libblifparse EXCLUDE_FROM_ALL)

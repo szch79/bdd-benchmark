@@ -9,6 +9,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 // Types
@@ -33,17 +34,19 @@ std::string file;
 bool satcount = false;
 std::string schedule_file;
 bool bucket_elimination = false;
+std::string proof_file;
 
 class parsing_policy
 {
 public:
   static constexpr std::string_view name = "CNF";
-  static constexpr std::string_view args = "bf:cs:";
+  static constexpr std::string_view args = "bf:cp:s:";
 
   static constexpr std::string_view help_text =
     "        -b                    Conjoin and quantify by bucket elimination\n"
     "        -c                    Count satisfying assignments\n"
     "        -f PATH               Path to '.cnf'/'.dimacs' file\n"
+    "        -p PATH               Write the proof of unsatisfiability to PATH (TBUDDY only)\n"
     "        -s PATH               Conjoin and quantify as the schedule file says";
 
   // NOTE: One could add more options to this benchmark, e.g., to influence the
@@ -73,6 +76,11 @@ public:
   // conjunctions with existential quantification and therefore decide only
   // whether the CNF is satisfiable. With `-s`, a schedule file lists the
   // operations; with `-b`, bucket elimination orders them by the variable order.
+  //
+  // A package whose operations generate a clausal proof, TBUDDY, writes it to
+  // the path given by `-p`. Its operations prove that the input clauses imply
+  // each intermediate result, so a false result comes with a refutation, while
+  // a model count is not certified and `-c` is rejected for it.
 
   /// Parse one command line option, where `c` is one of keys specified in the
   /// `args` constant of this class and `arg` is the option's value (if the
@@ -110,6 +118,10 @@ public:
     }
     case 'b': {
       bucket_elimination = true;
+      return false;
+    }
+    case 'p': {
+      proof_file = arg;
       return false;
     }
     default: return true;
@@ -433,6 +445,48 @@ construct_clauses(Adapter& adapter, const CNF& cnf, const bool keep_tautologies 
   return clauses;
 }
 
+/// Whether the operations of `Adapter` generate a clausal proof, which is
+/// initialised with the input clauses and gives the clauses by their numbers
+template <typename Adapter, typename = void>
+struct is_proof_generating : std::false_type
+{};
+
+template <typename Adapter>
+struct is_proof_generating<Adapter, std::void_t<decltype(Adapter::proof_generating)>>
+  : std::bool_constant<Adapter::proof_generating>
+{};
+
+/// Initialise the proof of a proof-generating `adapter` with the clauses and
+/// the variable order of `cnf`, written to `path`
+///
+/// Returns `false` on failure.
+template <typename Adapter>
+bool
+init_proof(Adapter& adapter, const CNF& cnf, const std::string& path)
+{
+  std::vector<std::vector<int>> clauses;
+  clauses.reserve(cnf.num_clauses());
+  cnf.foreach_clause([&clauses](auto begin, auto end) { clauses.emplace_back(begin, end); });
+
+  const std::vector<unsigned>& var_to_level = cnf.var_to_level();
+  std::vector<int> level_to_var(var_to_level.size());
+  for (size_t x = 0; x < var_to_level.size(); ++x) level_to_var[var_to_level[x]] = x + 1;
+
+  return adapter.init_proof(clauses, level_to_var, path);
+}
+
+/// The clauses of `cnf` as premises of the proof of a proof-generating
+/// `adapter`, all kept and in their input numbering
+template <typename Adapter>
+std::vector<typename Adapter::dd_t>
+premises(Adapter& adapter, const CNF& cnf)
+{
+  std::vector<typename Adapter::dd_t> clauses;
+  clauses.reserve(cnf.num_clauses());
+  for (unsigned id = 1; id <= cnf.num_clauses(); ++id) clauses.push_back(adapter.clause(id));
+  return clauses;
+}
+
 /// Conjoin the clauses with an (approximately) balanced bracketing
 /// `(c0 ∧ c1) ∧ (c2 ∧ (c3 ∧ c4))`
 ///
@@ -725,6 +779,19 @@ run_cnf(int argc, char** argv)
     std::cerr << "Quantifying runs need a BDD package\n";
     return -1;
   }
+  constexpr bool proving = is_proof_generating<Adapter>::value;
+  if (proving && proof_file.empty()) {
+    std::cerr << "This package generates a proof, whose path must be given (-p)\n";
+    return -1;
+  }
+  if (!proving && !proof_file.empty()) {
+    std::cerr << "This package does not generate a proof\n";
+    return -1;
+  }
+  if (proving && satcount) {
+    std::cerr << "The proof does not certify a model count\n";
+    return -1;
+  }
 
   // Read the file
   std::optional<CNF> cnf = CNF::parse_dimacs_cnf(file);
@@ -750,13 +817,28 @@ run_cnf(int argc, char** argv)
     uint64_t solutions;
 
     // ========================================================================
+    // Initialise the proof with the input clauses
+
+    time_duration proof_init_time = 0;
+    if constexpr (proving) {
+      const time_point t0 = now();
+      if (!init_proof(adapter, *cnf, proof_file)) { return -1; }
+      proof_init_time = duration_ms(t0, now());
+    }
+
+    // ========================================================================
     // Construct a BDD for each clause
 
     std::cout << json::field("clauses") << json::brace_open << json::endl << json::flush;
 
-    const time_point t1                         = now();
-    std::vector<typename Adapter::dd_t> clauses = construct_clauses(adapter, *cnf, quantifying);
-    const time_point t2                         = now();
+    const time_point t1 = now();
+    std::vector<typename Adapter::dd_t> clauses;
+    if constexpr (proving) {
+      clauses = premises(adapter, *cnf);
+    } else {
+      clauses = construct_clauses(adapter, *cnf, quantifying);
+    }
+    const time_point t2 = now();
 
     const time_duration clause_cons_time = duration_ms(t1, t2);
     std::cout << json::field("amount") << json::value(clauses.size()) << json::comma << json::endl;
@@ -813,6 +895,16 @@ run_cnf(int argc, char** argv)
                 << json::endl;
     }
 
+    if constexpr (proving) {
+      std::cout << json::field("proof") << json::brace_open << json::endl;
+      std::cout << json::field("init time (ms)") << json::value(proof_init_time) << json::comma
+                << json::endl;
+      std::cout << json::field("clauses") << json::value(adapter.proof_clauses()) << json::comma
+                << json::endl;
+      std::cout << json::field("refutation") << json::value(res == adapter.bot()) << json::endl;
+      std::cout << json::brace_close << json::comma << json::endl << json::flush;
+    }
+
     // ========================================================================
     // Count number of solutions
     time_duration counting_time = 0;
@@ -832,7 +924,8 @@ run_cnf(int argc, char** argv)
 
     // ========================================================================
     std::cout << json::field("total time (ms)")
-              << json::value(init_time + clause_cons_time + apply_time + counting_time)
+              << json::value(init_time + proof_init_time + clause_cons_time + apply_time
+                             + counting_time)
               << json::endl
               << json::flush;
 

@@ -196,3 +196,9 @@ add_bdd_benchmark(relprod)
 add_bcdd_benchmark(relprod)
 
 add_benchmark(cnf)
+
+# TBUDDY certifies only refutations of clauses, so it is built for the CNF benchmark alone.
+if (TBUDDY)
+  __add_benchmark(tbuddy tbuddy cnf bdd)
+  set_target_properties(tbuddy_cnf_bdd PROPERTIES C_STANDARD 11 CXX_STANDARD 17)
+endif (TBUDDY)

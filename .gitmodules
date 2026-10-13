@@ -31,3 +31,6 @@
 [submodule "external/abc-bdd"]
 	path = external/abc-bdd
 	url = ../../MyskYko/abc-bdd
+[submodule "external/tbuddy-artifact"]
+	path = external/tbuddy-artifact
+	url = ../../rebryant/tbuddy-artifact

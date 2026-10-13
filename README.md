@@ -160,6 +160,15 @@ packages.
   using a unique node table and memoization.
 
 
+- [**TBUDDY**](https://github.com/rebryant/tbuddy-artifact)
+  [[Bryant2022](#references)]:
+
+  BuDDy extended with the generation of clausal proofs. Every BDD it computes
+  carries a clause of an LRAT proof stating that the input clauses imply it, so
+  that deriving false refutes them. It is built only for the CNF benchmark, see
+  its option `-p`. TBUDDY sizes its tables itself, so `-M` has no effect.
+
+
 |                    | **Adiar** | **Aytdd** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **Ruddy** | **SimpleABC** | **Sylvan** |
 |--------------------|-----------|-----------|-----------|---------|----------|------------|-----------|-----------|---------------|------------|
 | **Language**       | C++       | Lean      | C         | C       | C        | Rust       | Rust      | Rust      | C             | C          |
@@ -273,6 +282,13 @@ The build of ABC extracts its list of source files by running GNU Make at
 configure time, so *make* must be installed even when CMake generates for
 another build tool. The whole of ABC is compiled once; only the archive members
 the benchmarks use are linked.
+
+**TBUDDY**
+
+The library is compiled from the unmodified artifact in
+`external/tbuddy-artifact` by `external/tbuddy/CMakeLists.txt`, from the files
+that the artifact's own Makefile puts into `tbuddy.a` and with its definition
+`ENABLE_TBDD`.
 
 
 ## Usage
@@ -437,6 +453,18 @@ The benchmark can be configured with the following options:
 
   ```bash
   ./build/src/${LIB}_cnf_${KIND} -f benchmarks/cnf-bucket/urquhart-li-03.cnf -b
+  ```
+
+- **`-p <path>`**
+
+  Write the proof of unsatisfiability to the given file in the LRAT format. It
+  is required for TBUDDY and rejected for every other package. A false result
+  comes with a refutation of the CNF, which the checker `lrat-check` of the
+  TBUDDY artifact verifies; the option `-c` is rejected with it, since the proof
+  certifies no model count.
+
+  ```bash
+  ./build/src/tbuddy_cnf_bdd -f benchmarks/cnf-bucket/urquhart-li-03.cnf -b -p urquhart-li-03.lrat
   ```
 
 The options `-s` and `-b` are not supported for ZDDs.
@@ -950,6 +978,10 @@ used this benchmarking suite for their evaluation:
 
 - [[Bryant2021](https://github.com/rebryant/Cloud-BDD/blob/conjunction_streamlined/hamiltonian/hpath.py)]
   R. E. Bryant. “*hpath.py*”. In: *GitHub/Cloud-BDD*. (2021)
+
+- [[Bryant2022](https://www.cs.cmu.edu/~bryant/pubdir/fmcad22.pdf)]
+  R. E. Bryant. “*TBUDDY: A Proof-Generating BDD Package*”. In: *Formal Methods
+  in Computer-Aided Design (FMCAD)*. (2022)
 
 - [[Chaing1995](https://dl.acm.org/doi/10.5555/313651.313681)]
   Yi-Jen Chiang, Michael T. Goodrich, Edward F. Grove, Roberto Tamassia, Darren
