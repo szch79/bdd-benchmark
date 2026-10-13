@@ -14,6 +14,19 @@
 
 #include "ruddy.h"
 
+////////////////////////////////////////////////////////////////////////////////
+/// Memory of Ruddy. An entry of the node table holds a node (variable, low and
+/// high child) and three links of the table's parent trie, all of the width of
+/// the table's identifiers. The table uses 16-bit identifiers below 2^16
+/// entries and 64-bit identifiers only beyond 2^32 entries, so every table
+/// that '-M' can bound in practice has 32-bit identifiers and 6*4 = 24 bytes
+/// per entry. The task caches of the operations are not counted, as in the
+/// LibBDD adapter.
+////////////////////////////////////////////////////////////////////////////////
+
+/// Size of an entry of the node table in Ruddy
+constexpr size_t sizeof_slot = 24u;
+
 namespace ruddy
 {
   class bdd_function;
@@ -27,8 +40,8 @@ namespace ruddy
     capi::ruddy_manager_t _manager;
 
   public:
-    manager() noexcept
-      : _manager(capi::ruddy_manager_new())
+    manager(size_t max_slots) noexcept
+      : _manager(capi::ruddy_manager_new(max_slots))
     {}
 
     manager(const manager& other) = delete;
@@ -312,11 +325,13 @@ private:
 public:
   /// \brief A manager with automatic garbage collection.
   ///
-  /// The manager grows its node table on demand and offers no bound on it, so '-M' is not enforced.
-  /// Its node table starts with 16-bit identifiers, on which a quantified variable above 8190
+  /// The manager grows its node table on demand.  The C interface bounds it by the entries that
+  /// fit into '-M' MiB and aborts when an operation leaves more, even after a collection.  Its
+  /// node table starts with 16-bit identifiers, on which a quantified variable above 8190
   /// would be taken for another, so the variables are limited to that range.
   ruddy_bdd_adapter(int varcount)
     : _varcount(varcount)
+    , _manager(static_cast<size_t>(M) * 1024 * 1024 / sizeof_slot)
   {
     if (varcount < 1 || 8191 < varcount) {
       throw std::invalid_argument("ruddy: the number of variables must be between 1 and 8191");

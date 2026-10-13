@@ -4,12 +4,15 @@
 
 //! A C interface for the shared representation of ruddy.
 //!
-//! A manager is a boxed `BddManager`.  A BDD is a boxed `Bdd`, the reference-counted handle that
-//! keeps its nodes alive across garbage collections, together with a pointer to its manager, so
-//! that the operations on BDDs take no manager.  Both are wrapped in local types, which the
-//! generated header declares as opaque structures.  Every function that returns a BDD returns a
-//! new box, which the caller releases with `ruddy_bdd_free`.  Releasing a BDD does not touch its
-//! manager.  Handles hold an `Rc`, so the interface is single-threaded.
+//! A manager is a boxed `BddManager` together with a budget of slots for its node table, which
+//! the library does not bound.  An operation that leaves the table over the budget, even after a
+//! garbage collection, aborts the process, as the LibBDD interface does over its limit.  A BDD is
+//! a boxed `Bdd`, the reference-counted handle that keeps its nodes alive across garbage
+//! collections, together with a pointer to its manager, so that the operations on BDDs take no
+//! manager.  Both are wrapped in local types, which the generated header declares as opaque
+//! structures.  Every function that returns a BDD returns a new box, which the caller releases
+//! with `ruddy_bdd_free`.  Releasing a BDD does not touch its manager.  Handles hold an `Rc`, so
+//! the interface is single-threaded.
 
 use std::collections::HashMap;
 
@@ -18,7 +21,10 @@ use ruddy::shared::{Bdd, BddManager};
 use ruddy::split::Bdd as SplitBdd;
 use ruddy::{NodeId, NodeIdAny, VariableId};
 
-pub struct Manager(BddManager);
+pub struct Manager {
+    manager: BddManager,
+    max_slots: usize,
+}
 
 pub struct Function {
     bdd: Bdd,
@@ -40,8 +46,35 @@ pub struct ruddy_bdd_t {
 impl ruddy_manager_t {
     unsafe fn get<'a>(self) -> &'a mut BddManager {
         debug_assert!(!self._p.is_null());
-        unsafe { &mut (*self._p).0 }
+        unsafe { &mut (*self._p).manager }
     }
+
+    /// Aborts when the node table has outgrown the budget and a garbage collection does not
+    /// bring it back within, since the library offers no bound of its own.
+    ///
+    /// The collection runs only when the table is over the budget.  A table with many dead
+    /// entries is then rebuilt to the reachable nodes, otherwise the dead entries are freed in
+    /// place and the table keeps its size.
+    unsafe fn check_budget(self) {
+        let m = unsafe { &mut *self._p };
+        if fits(m.manager.total_capacity(), m.max_slots) {
+            return;
+        }
+        m.manager.collect_garbage();
+        let slots = m.manager.total_capacity();
+        if !fits(slots, m.max_slots) {
+            eprintln!(
+                "ruddy: the node table needs {} slots, more than the budget of {}",
+                slots, m.max_slots
+            );
+            std::process::abort();
+        }
+    }
+}
+
+/// Whether a node table of `slots` entries, live or deleted, stays within `max_slots`.
+fn fits(slots: usize, max_slots: usize) -> bool {
+    slots <= max_slots
 }
 
 impl ruddy_bdd_t {
@@ -58,13 +91,16 @@ impl ruddy_bdd_t {
 
     unsafe fn manager<'a>(self) -> &'a mut BddManager {
         debug_assert!(!self._p.is_null());
-        unsafe { &mut (*(*self._p).manager).0 }
+        unsafe { &mut (*(*self._p).manager).manager }
     }
 
-    /// A new BDD of the manager of `self`, computed from that manager and `self`.
+    /// A new BDD of the manager of `self`, computed from that manager and `self`, within the
+    /// manager's budget.
     unsafe fn map(self, op: impl FnOnce(&mut BddManager, &Bdd) -> Bdd) -> ruddy_bdd_t {
         let manager = unsafe { (*self._p).manager };
-        ruddy_bdd_t::new(op(unsafe { self.manager() }, unsafe { self.get() }), manager)
+        let res = ruddy_bdd_t::new(op(unsafe { self.manager() }, unsafe { self.get() }), manager);
+        unsafe { ruddy_manager_t { _p: manager }.check_budget() };
+        res
     }
 }
 
@@ -107,10 +143,14 @@ impl BooleanOperator for AndNot {
 
 // Manager
 
+/// A manager whose node table may hold at most `max_slots` entries, live or deleted.
 #[no_mangle]
-pub extern "C" fn ruddy_manager_new() -> ruddy_manager_t {
+pub extern "C" fn ruddy_manager_new(max_slots: usize) -> ruddy_manager_t {
     ruddy_manager_t {
-        _p: Box::into_raw(Box::new(Manager(BddManager::new()))),
+        _p: Box::into_raw(Box::new(Manager {
+            manager: BddManager::new(),
+            max_slots,
+        })),
     }
 }
 
@@ -146,7 +186,9 @@ pub unsafe extern "C" fn ruddy_literal(
     value: bool,
 ) -> ruddy_bdd_t {
     let m = unsafe { manager.get() };
-    ruddy_bdd_t::new(m.new_bdd_literal(VariableId::new(var), value), manager._p)
+    let res = ruddy_bdd_t::new(m.new_bdd_literal(VariableId::new(var), value), manager._p);
+    unsafe { manager.check_budget() };
+    res
 }
 
 /// The node on `var` with children `then` and `else_`, both of which must be over variables
@@ -160,7 +202,9 @@ pub unsafe extern "C" fn ruddy_if_then_else(
 ) -> ruddy_bdd_t {
     let m = unsafe { manager.get() };
     let (then, else_) = unsafe { (then.get(), else_.get()) };
-    ruddy_bdd_t::new(m.if_then_else(VariableId::new(var), then, else_), manager._p)
+    let res = ruddy_bdd_t::new(m.if_then_else(VariableId::new(var), then, else_), manager._p);
+    unsafe { manager.check_budget() };
+    res
 }
 
 // Handles
@@ -368,7 +412,7 @@ mod tests {
     #[test]
     fn queens_4() {
         unsafe {
-            let m = ruddy_manager_new();
+            let m = ruddy_manager_new(usize::MAX);
             let n = 4u32;
             let var = |i: u32, j: u32| i * n + j;
             let mut res = ruddy_true(m);
@@ -428,7 +472,7 @@ mod tests {
     #[test]
     fn deep_conjunction() {
         unsafe {
-            let m = ruddy_manager_new();
+            let m = ruddy_manager_new(usize::MAX);
             let n = 1300u32;
             let mut res = ruddy_true(m);
             for v in 0..n {
@@ -449,9 +493,35 @@ mod tests {
     }
 
     #[test]
+    fn budget() {
+        assert!(fits(100, 100));
+        assert!(!fits(101, 100));
+    }
+
+    /// A conjunction of a hundred literals keeps about a hundred entries reachable, so a manager
+    /// with a budget of a thousand builds it without aborting.
+    #[test]
+    fn within_budget() {
+        unsafe {
+            let m = ruddy_manager_new(1000);
+            let mut res = ruddy_true(m);
+            for v in 0..100 {
+                let x = ruddy_literal(m, v, true);
+                let r = ruddy_and(res, x);
+                ruddy_bdd_free(res);
+                ruddy_bdd_free(x);
+                res = r;
+            }
+            assert_eq!(ruddy_sat_count(res, 100), 1.0);
+            ruddy_bdd_free(res);
+            ruddy_manager_free(m);
+        }
+    }
+
+    #[test]
     fn and_not() {
         unsafe {
-            let m = ruddy_manager_new();
+            let m = ruddy_manager_new(usize::MAX);
             let a = ruddy_literal(m, 0, true);
             let b = ruddy_literal(m, 1, true);
             let d = ruddy_and_not(a, b);
