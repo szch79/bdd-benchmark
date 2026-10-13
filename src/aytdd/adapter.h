@@ -363,8 +363,8 @@ public:
 
     const double excess_variables = static_cast<double>(this->_varcount) - static_cast<double>(vc);
 
-    return static_cast<uint64_t>(aytdd_bcdd_sat_count_double(aytdd::mgr, f.f, _varcount)
-                                 / std::pow(2, excess_variables));
+    return checked_satcount(aytdd_bcdd_sat_count_double(aytdd::mgr, f.f, _varcount)
+                            / std::pow(2, excess_variables));
   }
 
   /// \brief The cube of the literals of a path from f to true, false when f is false.

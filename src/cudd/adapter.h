@@ -288,7 +288,7 @@ public:
   inline uint64_t
   satcount(const ADD& f, const size_t vc)
   {
-    return f.CountMinterm(vc);
+    return checked_satcount(f.CountMinterm(vc));
   }
 
   inline ADD
@@ -568,7 +568,7 @@ public:
   inline uint64_t
   satcount(const BDD& f, const size_t vc)
   {
-    return f.CountMinterm(vc);
+    return checked_satcount(f.CountMinterm(vc));
   }
 
   inline BDD
@@ -822,7 +822,7 @@ public:
   inline uint64_t
   satcount(const ZDD& f, const size_t vc)
   {
-    return f.CountMinterm(vc);
+    return checked_satcount(f.CountMinterm(vc));
   }
 
   inline std::vector<std::pair<int, char>>

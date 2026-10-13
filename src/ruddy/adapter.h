@@ -522,7 +522,7 @@ public:
   {
     assert(vc <= static_cast<size_t>(this->_varcount));
 
-    return static_cast<uint64_t>(f.sat_count(vc));
+    return checked_satcount(f.sat_count(vc));
   }
 
   /// \brief The cube of the literals of the path of 'pickcube', false when f is false.

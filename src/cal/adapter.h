@@ -264,7 +264,7 @@ public:
   {
     const double satFrac = _mgr.SatisfyingFraction(f);
     const double numVars = vc;
-    return std::pow(2, numVars) * satFrac;
+    return checked_satcount(std::pow(2, numVars) * satFrac);
   }
 
   inline BDD

@@ -678,7 +678,7 @@ public:
   inline uint64_t
   satcount(const lib_bdd::bdd_function& f)
   {
-    return f.sat_count();
+    return checked_satcount(f.sat_count());
   }
 
   inline uint64_t
@@ -688,7 +688,7 @@ public:
 
     const double excess_variables = static_cast<double>(this->_varcount) - static_cast<double>(vc);
 
-    return f.sat_count() / std::pow(2, excess_variables);
+    return checked_satcount(f.sat_count() / std::pow(2, excess_variables));
   }
 
   inline lib_bdd::bdd_function

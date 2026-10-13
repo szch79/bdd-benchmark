@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <cassert>
+#include <stdexcept>
 #include <string>
 #include <sys/resource.h>
 
@@ -37,6 +38,23 @@ ilog2(unsigned long long n)
 
   return exp;
 #endif
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// \brief Converts a model count computed in floating point to the integer the
+///        benchmarks print.
+///
+/// \details The conversion is exact below 2^53. A count that is not a number,
+///          is negative, or is 2^64 or more has no such integer, and casting it
+///          is undefined behaviour, so the conversion throws instead.
+////////////////////////////////////////////////////////////////////////////////
+inline uint64_t
+checked_satcount(const double count)
+{
+  if (!(count >= 0.0 && count < 18446744073709551616.0)) {
+    throw std::overflow_error("model count is not an integer below 2^64");
+  }
+  return static_cast<uint64_t>(count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

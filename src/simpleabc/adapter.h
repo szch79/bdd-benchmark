@@ -512,7 +512,7 @@ public:
 
     std::unordered_map<unsigned, scaled> memo;
     const scaled p = fraction(f.f, memo);
-    return static_cast<uint64_t>(std::ldexp(p.mantissa, p.exponent + static_cast<int>(vc)));
+    return checked_satcount(std::ldexp(p.mantissa, p.exponent + static_cast<int>(vc)));
   }
 
   /// \brief The cube of the literals of the path of 'pickcube', false when f is false.

@@ -280,7 +280,7 @@ public:
   inline uint64_t
   satcount(const sylvan::Bdd& f, const size_t vc)
   {
-    return f.SatCount(vc);
+    return checked_satcount(f.SatCount(vc));
   }
 
   inline sylvan::Bdd

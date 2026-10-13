@@ -353,7 +353,7 @@ public:
     assert(vc <= this->_varcount);
 
     const double excess_variables = static_cast<double>(this->_varcount) - static_cast<double>(vc);
-    return bdd_satcount(f) / std::pow(2, excess_variables);
+    return checked_satcount(bdd_satcount(f) / std::pow(2, excess_variables));
   }
 
   inline bdd

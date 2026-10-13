@@ -263,14 +263,14 @@ public:
   inline uint64_t
   satcount(const oxidd::bdd_function& f)
   {
-    return f.sat_count_double(_manager.num_vars());
+    return checked_satcount(f.sat_count_double(_manager.num_vars()));
   }
 
   inline uint64_t
   satcount(const oxidd::bdd_function& f, const size_t vc)
   {
     assert(vc <= _manager.num_vars());
-    return f.sat_count_double(vc);
+    return checked_satcount(f.sat_count_double(vc));
   }
 
   inline oxidd::bdd_function
@@ -582,14 +582,14 @@ public:
   inline uint64_t
   satcount(const oxidd::bcdd_function& f)
   {
-    return f.sat_count_double(_manager.num_vars());
+    return checked_satcount(f.sat_count_double(_manager.num_vars()));
   }
 
   inline uint64_t
   satcount(const oxidd::bcdd_function& f, const size_t vc)
   {
     assert(vc <= _manager.num_vars());
-    return f.sat_count_double(vc);
+    return checked_satcount(f.sat_count_double(vc));
   }
 
   inline oxidd::bcdd_function
@@ -839,14 +839,14 @@ public:
   inline uint64_t
   satcount(const oxidd::zbdd_function& f)
   {
-    return f.sat_count_double(_manager.num_vars());
+    return checked_satcount(f.sat_count_double(_manager.num_vars()));
   }
 
   inline uint64_t
   satcount(const oxidd::zbdd_function& f, const size_t vc)
   {
     assert(vc <= _manager.num_vars());
-    return f.sat_count_double(vc);
+    return checked_satcount(f.sat_count_double(vc));
   }
 
   inline std::vector<std::pair<uint32_t, char>>
