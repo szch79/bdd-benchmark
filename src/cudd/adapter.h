@@ -172,7 +172,7 @@ public:
   inline ADD
   apply_diff(const ADD& f, const ADD& g)
   {
-    return f.Diff(g);
+    return f & ~g;
   }
 
   inline ADD
@@ -209,20 +209,20 @@ public:
   inline ADD
   exists(const ADD& f, int i)
   {
-    return f.ExistAbstract(_mgr.addVar(i));
+    return f.OrAbstract(_mgr.addVar(i));
   }
 
   inline ADD
   exists(const ADD& f, const std::function<bool(int)>& pred)
   {
-    return f.ExistAbstract(cube(pred));
+    return f.OrAbstract(cube(pred));
   }
 
   template <typename IT>
   inline ADD
   exists(const ADD& f, IT rbegin, IT rend)
   {
-    return f.ExistAbstract(cube(rbegin, rend));
+    return f.OrAbstract(cube(rbegin, rend));
   }
 
   inline ADD
@@ -256,7 +256,7 @@ public:
     }
 
     // FIXME: there is no specialized `ADD::AndAbstract` in CUDD yet
-    return (states & rel).ExistAbstract(_vars_relnext).Permute(_permute_relnext.data());
+    return (states & rel).OrAbstract(_vars_relnext).Permute(_permute_relnext.data());
   }
 
   inline ADD
@@ -270,7 +270,7 @@ public:
     }
 
     // FIXME: there is no specialized `ADD::AndAbstract` in CUDD yet
-    return (states.Permute(_permute_relprev.data()) & rel).ExistAbstract(_vars_relprev);
+    return (states.Permute(_permute_relprev.data()) & rel).OrAbstract(_vars_relprev);
   }
 
   inline uint64_t
