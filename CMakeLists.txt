@@ -60,9 +60,10 @@ endif(ADIAR)
 
 # Aytdd Package (Mingtong Lin), a Lean library used through its C interface
 option(AYTDD "Build for Aytdd" ON)
-if (AYTDD)
+option(AYTDD_OPEN_TABLE "Build for Aytdd over its open table" OFF)
+if (AYTDD OR AYTDD_OPEN_TABLE)
   add_subdirectory(external/aytdd aytdd EXCLUDE_FROM_ALL)
-endif (AYTDD)
+endif (AYTDD OR AYTDD_OPEN_TABLE)
 
 # BuDDy Package (Jørn Lind-Nielsen - Copenhagen University, Denmark)
 option(BUDDY "Build for BuDDy" ON)

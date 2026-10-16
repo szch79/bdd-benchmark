@@ -103,10 +103,15 @@ namespace aytdd
   };
 } // namespace aytdd
 
+// The name of the package in the output, which a build over another node table of Aytdd sets.
+#ifndef AYTDD_NAME
+#define AYTDD_NAME "Aytdd"
+#endif
+
 class aytdd_bcdd_adapter
 {
 public:
-  static constexpr std::string_view name = "Aytdd";
+  static constexpr std::string_view name = AYTDD_NAME;
   static constexpr std::string_view dd   = "BCDD";
 
   static constexpr bool needs_extend     = false;

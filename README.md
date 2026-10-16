@@ -241,6 +241,12 @@ with `-D AYTDD_ROOT=<path>`, or turn the package off with `-D AYTDD=OFF`. Its
 headers include *gmp.h* of the *GMP Library*, which is looked up in the usual
 prefixes or given with `-D GMP_INCLUDE_DIR=<path>`.
 
+The default build of Aytdd stores its nodes in parent-local tries. A second
+build over its open-addressing node table is the package `aytdd_ot`, switched on
+with `-D AYTDD_OPEN_TABLE=ON`. Its archive is built with
+`lake -R -KnodeTable=openTable build libaytdd`, into a build directory of its
+own, and `lake -R build` returns the repository to its default build.
+
 **LibBDD**, **OxiDD** and **Ruddy**
 
 These libraries are implemented in Rust and interact with C/C++ via an FFI.
