@@ -77,13 +77,20 @@ struct resource_usage
     const uint64_t utime = (a.ru_utime.tv_sec - b.ru_utime.tv_sec) * 1000LL
       + (a.ru_utime.tv_usec - b.ru_utime.tv_usec) / 1000;
 
+    // `getrusage` reports the maximum resident set in bytes on macOS and in kibibytes elsewhere
+#ifdef __APPLE__
+    const uint64_t maxrss_mib = a.ru_maxrss / (1024 * 1024);
+#else
+    const uint64_t maxrss_mib = a.ru_maxrss / 1024;
+#endif
+
     os << json::brace_open << json::endl
        << json::field("stime (ms)") << json::value(stime) << json::comma << json::endl
        << json::field("utime (ms)") << json::value(utime) << json::comma << json::endl
        << json::field("CPU (%)")
        << json::value(self.elapsed_ms > 0 ? (stime + utime) * 100 / self.elapsed_ms : -1)
        << json::comma << json::endl
-       << json::field("maximum resident set size (MiB)") << json::value(a.ru_maxrss / 1024)
+       << json::field("maximum resident set size (MiB)") << json::value(maxrss_mib)
        << json::comma << json::endl
        << json::field("minor page faults") << json::value(a.ru_minflt - b.ru_minflt) << json::comma
        << json::endl
