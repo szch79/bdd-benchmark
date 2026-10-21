@@ -34,3 +34,6 @@
 [submodule "external/tbuddy-artifact"]
 	path = external/tbuddy-artifact
 	url = ../../rebryant/tbuddy-artifact
+[submodule "external/rsdd"]
+	path = external/rsdd
+	url = ../../neuppl/rsdd

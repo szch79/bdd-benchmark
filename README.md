@@ -133,6 +133,20 @@ packages.
   depth-first on a unique node table and memoization.
 
 
+- [**RSDD**](https://github.com/neuppl/rsdd):
+
+  A library of binary and sentential decision diagrams. Its BDDs have complement
+  edges and depth-first algorithms over a unique node table, with the apply
+  cache that its C interface exposes, which keeps every result, and no garbage
+  collection. The interface has no quantification, so the adapter quantifies
+  and renames one variable at a time through its single-variable composition.
+  It has no count of the allocated nodes, which *Picotrav* prints as `null`, and
+  no export of BDDs. It counts models as weighted counts in `f64`. It bounds no
+  table, so `-M` has no effect.
+
+  We use the C interface in its crate, built with the feature `ffi`.
+
+
 - [**Ruddy**](https://github.com/sybila/ruddy)
   [[Pastva2023](#references)]:
 
@@ -169,22 +183,22 @@ packages.
   its option `-p`. TBUDDY sizes its tables itself, so `-M` has no effect.
 
 
-|                    | **Adiar** | **Aytdd** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **Ruddy** | **SimpleABC** | **Sylvan** |
-|--------------------|-----------|-----------|-----------|---------|----------|------------|-----------|-----------|---------------|------------|
-| **Language**       | C++       | Lean      | C         | C       | C        | Rust       | Rust      | Rust      | C             | C          |
-|                    |           |           |           |         |          |            |           |           |               |            |
-| **BDD**            | ✓         |           | ✓         |         | (✓)      | ✓          | ✓         | ✓         |               | (✓)        |
-| **BCDD**           |           | ✓         |           | ✓       | ✓        |            | ✓         |           | ✓             | ✓          |
-| **MTBDD**          |           |           |           |         | ✓        |            | ✓         |           |               | ✓          |
-| **ZDD**            | ✓         |           |           |         | ✓        |            | ✓         |           |               | ✓          |
-|                    |           |           |           |         |          |            |           |           |               |            |
-| **Thread Safe**    |           |           |           |         |          | ✓          | ✓         |           |               | ✓          |
-| **Multi-threaded** |           |           |           |         |          |            | ✓         |           |               | ✓          |
-|                    |           |           |           |         |          |            |           |           |               |            |
-| **Reordering**     |           |           | ✓         | ✓       | ✓        |            | (✓)       |           | (✓)           | (✓)        |
-|                    |           |           |           |         |          |            |           |           |               |            |
-| **Shared Nodes**   |           | ✓         | ✓         | ✓       | ✓        |            | ✓         | ✓         | ✓             | ✓          |
-| **Ext. Memory**    | ✓         |           |           | ✓       |          |            |           |           |               |            |
+|                    | **Adiar** | **Aytdd** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **RSDD** | **Ruddy** | **SimpleABC** | **Sylvan** |
+|--------------------|-----------|-----------|-----------|---------|----------|------------|-----------|----------|-----------|---------------|------------|
+| **Language**       | C++       | Lean      | C         | C       | C        | Rust       | Rust      | Rust     | Rust      | C             | C          |
+|                    |           |           |           |         |          |            |           |          |           |               |            |
+| **BDD**            | ✓         |           | ✓         |         | (✓)      | ✓          | ✓         |          | ✓         |               | (✓)        |
+| **BCDD**           |           | ✓         |           | ✓       | ✓        |            | ✓         | ✓        |           | ✓             | ✓          |
+| **MTBDD**          |           |           |           |         | ✓        |            | ✓         |          |           |               | ✓          |
+| **ZDD**            | ✓         |           |           |         | ✓        |            | ✓         |          |           |               | ✓          |
+|                    |           |           |           |         |          |            |           |          |           |               |            |
+| **Thread Safe**    |           |           |           |         |          | ✓          | ✓         |          |           |               | ✓          |
+| **Multi-threaded** |           |           |           |         |          |            | ✓         |          |           |               | ✓          |
+|                    |           |           |           |         |          |            |           |          |           |               |            |
+| **Reordering**     |           |           | ✓         | ✓       | ✓        |            | (✓)       |          |           | (✓)           | (✓)        |
+|                    |           |           |           |         |          |            |           |          |           |               |            |
+| **Shared Nodes**   |           | ✓         | ✓         | ✓       | ✓        |            | ✓         | ✓        | ✓         | ✓             | ✓          |
+| **Ext. Memory**    | ✓         |           |           | ✓       |          |            |           |          |           |               |            |
 
 
 We hope to extend the number of packages. See [issue
@@ -247,7 +261,7 @@ with `-D AYTDD_OPEN_TABLE=ON`. Its archive is built with
 `lake -R -KnodeTable=openTable build libaytdd`, into a build directory of its
 own, and `lake -R build` returns the repository to its default build.
 
-**LibBDD**, **OxiDD** and **Ruddy**
+**LibBDD**, **OxiDD**, **RSDD** and **Ruddy**
 
 These libraries are implemented in Rust and interact with C/C++ via an FFI.
 Hence, one needs to use *cargo* which in turn requires an internet connection to

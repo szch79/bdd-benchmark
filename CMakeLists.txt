@@ -100,6 +100,13 @@ if (OXIDD)
   add_subdirectory(external/oxidd oxidd EXCLUDE_FROM_ALL)
 endif (OXIDD)
 
+# RSDD (Steven Holtzen et al. - Northeastern University, United States of America), through the
+# C interface of its crate
+option(RSDD "Build for RSDD" ON)
+if (RSDD)
+  add_subdirectory(external/rsdd-cmake rsdd EXCLUDE_FROM_ALL)
+endif (RSDD)
+
 # Ruddy (Lukáš Urban, Samuel Pastva - Masaryk University, Czech Republic), through a C interface
 option(RUDDY "Build for Ruddy" ON)
 if (RUDDY)
