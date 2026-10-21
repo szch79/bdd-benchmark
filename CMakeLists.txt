@@ -46,6 +46,21 @@ message(STATUS "")
 # ============================================================================ #
 
 # ---------------------------------------------------------------------------- #
+# GMP, the exact weights and counts of the CNF benchmark
+find_path(GMP_INCLUDE_DIR gmp.h PATHS /opt/homebrew/include /usr/local/include)
+find_library(GMP_LIBRARY gmp PATHS /opt/homebrew/lib /usr/local/lib)
+if (NOT GMP_INCLUDE_DIR OR NOT GMP_LIBRARY)
+  message(FATAL_ERROR "no GMP found; set GMP_INCLUDE_DIR to the directory of gmp.h and GMP_LIBRARY to the library")
+endif()
+
+add_library(GMP::GMP UNKNOWN IMPORTED)
+set_target_properties(GMP::GMP PROPERTIES
+  IMPORTED_LOCATION "${GMP_LIBRARY}"
+  INTERFACE_INCLUDE_DIRECTORIES "${GMP_INCLUDE_DIR}"
+)
+message(STATUS "  |  GMP library:       ${GMP_LIBRARY}")
+
+# ---------------------------------------------------------------------------- #
 # BDD Packages
 
 # Adiar Package (Steffan Sølvsten - Aarhus University, Denmark)

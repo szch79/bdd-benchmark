@@ -222,3 +222,17 @@ if (TBUDDY)
   __add_benchmark(tbuddy tbuddy cnf bdd)
   set_target_properties(tbuddy_cnf_bdd PROPERTIES C_STANDARD 11 CXX_STANDARD 17)
 endif (TBUDDY)
+
+# The CNF benchmark reads exact weights with GMP. The Aytdd archive carries the GMP of the Lean
+# toolchain, a static library that its link file names, so its executables take GMP from there:
+# a second GMP beside it would be a different library.
+link_bdd_extra(cnf GMP::GMP)
+link_zdd_extra(cnf GMP::GMP)
+foreach (LIB cal cudd oxidd simpleabc sylvan rsdd)
+  if (TARGET ${LIB}_cnf_bcdd)
+    target_link_libraries(${LIB}_cnf_bcdd PRIVATE GMP::GMP)
+  endif()
+endforeach()
+if (TBUDDY)
+  target_link_libraries(tbuddy_cnf_bdd PRIVATE GMP::GMP)
+endif (TBUDDY)

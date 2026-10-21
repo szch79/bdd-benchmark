@@ -76,7 +76,8 @@ packages.
 
   An implementation of shared BDDs with complement edges in Lean 4, with
   depth-first algorithms using a unique node table and memoization. Nodes are
-  never reclaimed.
+  never reclaimed. It counts weighted models exactly, over the rationals, and in
+  double precision.
 
   We use its C interface, which is built in the Aytdd repository.
 
@@ -141,8 +142,8 @@ packages.
   collection. The interface has no quantification, so the adapter quantifies
   and renames one variable at a time through its single-variable composition.
   It has no count of the allocated nodes, which *Picotrav* prints as `null`, and
-  no export of BDDs. It counts models as weighted counts in `f64`. It bounds no
-  table, so `-M` has no effect.
+  no export of BDDs. RSDD counts weighted models in `f64`. It bounds no table,
+  so `-M` has no effect.
 
   We use the C interface in its crate, built with the feature `ffi`.
 
@@ -230,6 +231,14 @@ installed with.
 apt install bison flex
 ```
 
+The *CNF* benchmark requires the *GMP Library*, which is looked up in the usual
+prefixes or given with `-D GMP_INCLUDE_DIR=<path>` and `-D GMP_LIBRARY=<path>`.
+On Ubuntu, it can be installed with
+
+```bash
+apt install libgmp-dev
+```
+
 The *McNet* benchmark requires the *Boost Library*. On Ubuntu, these can be
 installed as follows
 
@@ -252,8 +261,9 @@ Aytdd is a Lean library, which this CMake project does not build. Build its
 archive with `lake build libaytdd` in the Aytdd repository. When this repository
 is its submodule, the archive is found automatically; otherwise, pass its path
 with `-D AYTDD_ROOT=<path>`, or turn the package off with `-D AYTDD=OFF`. Its
-headers include *gmp.h* of the *GMP Library*, which is looked up in the usual
-prefixes or given with `-D GMP_INCLUDE_DIR=<path>`.
+headers include *gmp.h* of the *GMP Library*, found as for the CNF benchmark.
+The archive carries the GMP of the Lean toolchain, so the Aytdd executables
+link that one rather than `GMP_LIBRARY`.
 
 The default build of Aytdd stores its nodes in parent-local tries. A second
 build over its open-addressing node table is the package `aytdd_ot`, switched on
@@ -453,6 +463,36 @@ The benchmark can be configured with the following options:
 - **`-c`**
 
   Count the satisfying assignments of the conjunction.
+
+- **`-q wmc`**
+
+  Count the weighted models of the conjunction under the weights that the file
+  gives its literals in the format of the model counting competition 2022, see
+  [benchmarks/wmc](benchmarks/wmc). The count is timed apart from the
+  construction, added to the total time, and replaces the one of `-c`:
+
+  ```json
+  "count": {
+    "query": "wmc",
+    "result": "208141/1000000",
+    "type": "exact",
+    "time (ms)": 0
+  }
+  ```
+
+  An exact result is a reduced fraction `num/den`, or an integer, and a result
+  in double precision is the shortest decimal that reads back as the `double`.
+  Aytdd counts both ways and reports the count in double precision as a second
+  block `"count (double)"` of the same form; RSDD counts in double precision,
+  which is the weighted model count only if every variable that a path to true
+  skips has weights summing to one, as on the files of
+  [benchmarks/wmc](benchmarks/wmc). Every other package exits with status 3. The
+  option `-q` is rejected together with `-s` and `-b`, for TBUDDY, and on a file
+  without the line `c t wmc`.
+
+  ```bash
+  ./build/src/aytdd_cnf_bcdd -f benchmarks/wmc/cancer-query.cnf -q wmc
+  ```
 
 - **`-s <path>`**
 

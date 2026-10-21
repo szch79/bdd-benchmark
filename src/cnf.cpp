@@ -10,10 +10,17 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 // Types
+#include <cmath>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
+
+// Exact weights and counts
+#include <gmp.h>
 
 // For reading the CNF file
 #include <filesystem>
@@ -35,18 +42,20 @@ bool satcount = false;
 std::string schedule_file;
 bool bucket_elimination = false;
 std::string proof_file;
+bool weighted_count = false;
 
 class parsing_policy
 {
 public:
   static constexpr std::string_view name = "CNF";
-  static constexpr std::string_view args = "bf:cp:s:";
+  static constexpr std::string_view args = "bf:cp:q:s:";
 
   static constexpr std::string_view help_text =
     "        -b                    Conjoin and quantify by bucket elimination\n"
     "        -c                    Count satisfying assignments\n"
     "        -f PATH               Path to '.cnf'/'.dimacs' file\n"
     "        -p PATH               Write the proof of unsatisfiability to PATH (TBUDDY only)\n"
+    "        -q wmc                Count the weighted models by the file's weights\n"
     "        -s PATH               Conjoin and quantify as the schedule file says";
 
   // NOTE: One could add more options to this benchmark, e.g., to influence the
@@ -81,6 +90,11 @@ public:
   // the path given by `-p`. Its operations prove that the input clauses imply
   // each intermediate result, so a false result comes with a refutation, while
   // a model count is not certified and `-c` is rejected for it.
+  //
+  // The option `-q wmc` counts the weighted models of the conjunction under the
+  // weights of the literals that the file gives in the format of the model
+  // counting competition 2022. A package counts exactly, in double precision,
+  // or both, as its adapter provides; the count replaces the one of `-c`.
 
   /// Parse one command line option, where `c` is one of keys specified in the
   /// `args` constant of this class and `arg` is the option's value (if the
@@ -124,6 +138,14 @@ public:
       proof_file = arg;
       return false;
     }
+    case 'q': {
+      if (std::string_view(arg) != "wmc") {
+        std::cerr << "Unknown query '" << arg << "', expected 'wmc' (-q)\n";
+        return true;
+      }
+      weighted_count = true;
+      return false;
+    }
     default: return true;
     }
   }
@@ -140,6 +162,128 @@ unsigned_abs(int value)
   return value < 0 ? 0 - unsigned(value) : unsigned(value);
 }
 
+/// The weight of a literal, an exact rational together with the `double` nearest to it
+///
+/// A GMP `mpq_t` is an array of one structure, which is neither copied by assignment nor
+/// released on its own, so this class holds one and copies its value.
+class literal_weight
+{
+  mpq_t _exact;
+  double _approx = 1.0;
+
+public:
+  /// The weight one
+  literal_weight()
+  {
+    mpq_init(_exact);
+    mpq_set_ui(_exact, 1, 1);
+  }
+
+  literal_weight(const literal_weight& w)
+  {
+    mpq_init(_exact);
+    mpq_set(_exact, w._exact);
+    _approx = w._approx;
+  }
+
+  literal_weight&
+  operator=(const literal_weight& w)
+  {
+    mpq_set(_exact, w._exact);
+    _approx = w._approx;
+    return *this;
+  }
+
+  ~literal_weight()
+  {
+    mpq_clear(_exact);
+  }
+
+  /// The exact weight
+  mpq_srcptr
+  exact() const
+  {
+    return _exact;
+  }
+
+  /// The `double` nearest to the exact weight
+  double
+  approx() const
+  {
+    return _approx;
+  }
+
+  /// Set the weight to the decimal `text`: an optional sign, digits with an optional fraction
+  /// after a point, and an optional exponent of at most four digits after `e` or `E`
+  ///
+  /// The exact weight is the rational the decimal denotes, computed in integers, and the
+  /// `double` is the one `strtod` reads from `text`, which is correctly rounded.
+  ///
+  /// Returns `false` if `text` is not such a decimal or its value lies beyond the range of
+  /// `double`.
+  bool
+  set_decimal(const std::string& text)
+  {
+    // Split the decimal into its sign, its digits, the length of its fraction and its exponent
+    size_t i            = 0;
+    const bool negative = i < text.size() && text[i] == '-';
+    if (i < text.size() && (text[i] == '-' || text[i] == '+')) ++i;
+
+    std::string digits;
+    size_t fraction = 0;
+    while (i < text.size() && ascii_isnumeric(text[i])) digits.push_back(text[i++]);
+    if (i < text.size() && text[i] == '.') {
+      for (++i; i < text.size() && ascii_isnumeric(text[i]); ++i, ++fraction) {
+        digits.push_back(text[i]);
+      }
+    }
+    if (digits.empty()) return false;
+
+    long exponent = 0;
+    if (i < text.size() && (text[i] == 'e' || text[i] == 'E')) {
+      ++i;
+      const bool exponent_negative = i < text.size() && text[i] == '-';
+      if (i < text.size() && (text[i] == '-' || text[i] == '+')) ++i;
+      const size_t begin = i;
+      for (; i < text.size() && ascii_isnumeric(text[i]); ++i) {
+        if (i - begin == 4) return false;
+        exponent = exponent * 10 + (text[i] - '0');
+      }
+      if (i == begin) return false;
+      if (exponent_negative) exponent = -exponent;
+    }
+    if (i != text.size()) return false;
+
+    const double approx = std::strtod(text.c_str(), nullptr);
+    if (!std::isfinite(approx)) return false;
+
+    // The value is `digits * 10^(exponent - fraction)`
+    const long shift = exponent - static_cast<long>(fraction);
+    mpz_set_str(mpq_numref(_exact), digits.c_str(), 10);
+    mpz_set_ui(mpq_denref(_exact), 1);
+    if (shift >= 0) {
+      mpz_t power;
+      mpz_init(power);
+      mpz_ui_pow_ui(power, 10, shift);
+      mpz_mul(mpq_numref(_exact), mpq_numref(_exact), power);
+      mpz_clear(power);
+    } else {
+      mpz_ui_pow_ui(mpq_denref(_exact), 10, -shift);
+    }
+    if (negative) mpz_neg(mpq_numref(_exact), mpq_numref(_exact));
+    mpq_canonicalize(_exact);
+    _approx = approx;
+    return true;
+  }
+};
+
+/// The weights of the negative and the positive literal of a variable
+struct variable_weights
+{
+  literal_weight low;
+  literal_weight high;
+};
+
 class CNF
 {
   /// Literals of all clauses
@@ -153,6 +297,77 @@ class CNF
 
   /// Map from variables to levels
   std::vector<unsigned> _var_to_level;
+
+  /// Weights of the literals of each variable, one where the file gives none
+  std::vector<variable_weights> _weights;
+
+  /// Whether the file states that it is an instance of weighted model counting (`c t wmc`)
+  bool _weighted = false;
+
+  /// A weight line `c p weight L W 0`, before it is checked against the number of variables
+  struct weight_line
+  {
+    int literal;
+    std::string value;
+  };
+
+  /// Read a comment line, the text `comment` after its leading `c`, for the lines of weighted
+  /// model counting, `c t wmc` and `c p weight L W 0`, the latter into `weight_lines`
+  ///
+  /// Other comment lines are ignored. Returns `false` on a malformed weight line.
+  bool
+  read_weighted_comment(const std::string& comment, std::vector<weight_line>& weight_lines)
+  {
+    std::istringstream words(comment);
+    std::string kind, word;
+    if (!(words >> kind >> word)) return true;
+    if (kind == "t") {
+      if (word == "wmc") _weighted = true;
+      return true;
+    }
+    if (kind != "p" || word != "weight") return true;
+
+    weight_line w;
+    int terminator;
+    if (!(words >> w.literal >> w.value >> terminator) || w.literal == 0 || terminator != 0
+        || words >> word) {
+      std::cerr << "error: expected `c p weight <literal> <weight> 0`, got `c" << comment << "`\n";
+      return false;
+    }
+    weight_lines.push_back(std::move(w));
+    return true;
+  }
+
+  /// Set the weights of the `nvars` variables from `weight_lines`
+  ///
+  /// Returns `false` on a literal beyond `nvars`, a literal given twice, or a malformed weight.
+  bool
+  set_weights(const std::vector<weight_line>& weight_lines, const unsigned nvars)
+  {
+    _weights.resize(nvars);
+    std::vector<bool> given(2 * size_t(nvars), false);
+    for (const weight_line& w : weight_lines) {
+      const unsigned var = unsigned_abs(w.literal) - 1;
+      if (var >= nvars) {
+        std::cerr << "error: weight of literal " << w.literal << " but there are only " << nvars
+                  << " variables\n";
+        return false;
+      }
+      const size_t index = 2 * size_t(var) + (w.literal > 0);
+      if (given[index]) {
+        std::cerr << "error: weight of literal " << w.literal << " given twice\n";
+        return false;
+      }
+      given[index]           = true;
+      literal_weight& weight = w.literal > 0 ? _weights[var].high : _weights[var].low;
+      if (!weight.set_decimal(w.value)) {
+        std::cerr << "error: weight '" << w.value << "' of literal " << w.literal
+                  << " is not a decimal within the range of double\n";
+        return false;
+      }
+    }
+    return true;
+  }
 
 public:
   /// Parse a DIMACS CNF file from `path`
@@ -175,12 +390,18 @@ public:
   /// order. Here, variable 2 called "b" is at the top, then variable 1 "a"
   /// follows, and so on. The variable order is optional but if present, if must
   /// contain all variables.
+  ///
+  /// The comment lines `c t wmc` and `c p weight L W 0` of the model counting
+  /// competition 2022, before or after the problem line, state that the file is
+  /// an instance of weighted model counting and give the literal `L` the weight
+  /// `W`, a decimal. A literal without such a line has the weight one.
   static std::optional<CNF>
   parse_dimacs_cnf(const std::string& path)
   {
     size_t nclauses;
     CNF cnf;
     std::ifstream input(path, std::ios::in);
+    std::vector<weight_line> weight_lines;
 
     // Parse the variable order
     std::vector<unsigned> var_order;
@@ -204,6 +425,8 @@ public:
             return {};
           }
           var_order.push_back(var_id - 1);
+        } else if (!cnf.read_weighted_comment(comment, weight_lines)) {
+          return {};
         }
       } else if (c == 'p') {
         break;
@@ -265,7 +488,10 @@ public:
       // Comment lines may also occur among the clauses
       input >> std::ws;
       if (input.peek() == 'c') {
-        input.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        input.get();
+        std::string comment;
+        std::getline(input, comment);
+        if (!cnf.read_weighted_comment(comment, weight_lines)) return {};
         continue;
       }
 
@@ -306,6 +532,8 @@ public:
       return {};
     }
 
+    if (!cnf.set_weights(weight_lines, nvars)) return {};
+
     return cnf;
   }
 
@@ -333,6 +561,20 @@ public:
   var_to_level() const
   {
     return _var_to_level;
+  }
+
+  /// Get the weights of the literals of each variable, indexed by variable
+  const std::vector<variable_weights>&
+  weights() const
+  {
+    return _weights;
+  }
+
+  /// Whether the file states that it is an instance of weighted model counting
+  bool
+  weighted() const
+  {
+    return _weighted;
   }
 
   /// Call `f(begin, end)` for each clause, where `begin` and `end` are random access iterators over
@@ -455,6 +697,80 @@ template <typename Adapter>
 struct is_proof_generating<Adapter, std::void_t<decltype(Adapter::proof_generating)>>
   : std::bool_constant<Adapter::proof_generating>
 {};
+
+/// The weights of the negative and the positive literal of each variable, exact, indexed by the
+/// label of the variable
+using exact_weights = std::vector<std::pair<mpq_srcptr, mpq_srcptr>>;
+
+/// The weights of the negative and the positive literal of each variable, in double precision,
+/// indexed by the label of the variable
+using double_weights = std::vector<std::pair<double, double>>;
+
+/// Whether `Adapter` counts weighted models exactly, by a member `wmc_rat(f, weights, out)` that
+/// stores the count of `f` under the `exact_weights` `weights` into the `mpq_t` `out`
+template <typename Adapter, typename = void>
+struct has_wmc_rat : std::false_type
+{};
+
+template <typename Adapter>
+struct has_wmc_rat<Adapter,
+                   std::void_t<decltype(std::declval<Adapter&>().wmc_rat(
+                     std::declval<const typename Adapter::dd_t&>(),
+                     std::declval<const exact_weights&>(),
+                     std::declval<mpq_ptr>()))>> : std::true_type
+{};
+
+/// Whether `Adapter` counts weighted models in double precision, by a member `wmc(f, weights)`
+/// that returns the count of `f` under the `double_weights` `weights`
+template <typename Adapter, typename = void>
+struct has_wmc : std::false_type
+{};
+
+template <typename Adapter>
+struct has_wmc<Adapter,
+               std::void_t<decltype(double(std::declval<Adapter&>().wmc(
+                 std::declval<const typename Adapter::dd_t&>(),
+                 std::declval<const double_weights&>())))>> : std::true_type
+{};
+
+/// The rational `q` as GMP prints it, `num/den`, or `num` if the denominator is one
+std::string
+rational_string(mpq_srcptr q)
+{
+  // `mpq_get_str` needs the digits of both parts, the sign, the slash and the terminator
+  std::string s(mpz_sizeinbase(mpq_numref(q), 10) + mpz_sizeinbase(mpq_denref(q), 10) + 3, '\0');
+  mpq_get_str(&s[0], 10, q);
+  s.resize(std::strlen(s.c_str()));
+  return s;
+}
+
+/// The shortest decimal that reads back as `d`
+std::string
+double_string(const double d)
+{
+  char buf[32];
+  for (int precision = 1; precision <= 17; ++precision) {
+    std::snprintf(buf, sizeof(buf), "%.*g", precision, d);
+    if (std::strtod(buf, nullptr) == d) break;
+  }
+  return buf;
+}
+
+/// Print the block `name` of a weighted model count
+void
+print_count(const std::string& name,
+            const std::string& result,
+            const std::string_view type,
+            const time_duration time)
+{
+  std::cout << json::field(name) << json::brace_open << json::endl;
+  std::cout << json::field("query") << json::value(std::string_view("wmc")) << json::comma
+            << json::endl;
+  std::cout << json::field("result") << json::value(result) << json::comma << json::endl;
+  std::cout << json::field("type") << json::value(type) << json::comma << json::endl;
+  std::cout << json::field("time (ms)") << json::value(time) << json::endl;
+  std::cout << json::brace_close << json::comma << json::endl << json::flush;
+}
 
 /// Initialise the proof of a proof-generating `adapter` with the clauses and
 /// the variable order of `cnf`, written to `path`
@@ -771,7 +1087,8 @@ run_cnf(int argc, char** argv)
     std::cerr << "A schedule and bucket elimination exclude each other\n";
     return -1;
   }
-  if (quantifying && satcount) {
+  const bool counting = weighted_count;
+  if (quantifying && (satcount || counting)) {
     std::cerr << "Quantifying runs decide satisfiability and do not count\n";
     return -1;
   }
@@ -788,9 +1105,15 @@ run_cnf(int argc, char** argv)
     std::cerr << "This package does not generate a proof\n";
     return -1;
   }
-  if (proving && satcount) {
+  if (proving && (satcount || counting)) {
     std::cerr << "The proof does not certify a model count\n";
     return -1;
+  }
+  constexpr bool counts_exact  = has_wmc_rat<Adapter>::value;
+  constexpr bool counts_double = has_wmc<Adapter>::value;
+  if (counting && !counts_exact && !counts_double) {
+    std::cerr << Adapter::name << " cannot count weighted\n";
+    return 3;
   }
 
   // Read the file
@@ -802,12 +1125,31 @@ run_cnf(int argc, char** argv)
     std::cerr << "The CNF contains an empty clause and is thus trivially unsatisfiable\n";
     return -1;
   }
+  if (counting && !cnf->weighted()) {
+    std::cerr << "The file is not an instance of weighted model counting (no line `c t wmc`)\n";
+    return -1;
+  }
 
   std::optional<std::vector<schedule_command>> schedule;
   if (!schedule_file.empty()) {
     schedule = parse_schedule(schedule_file, cnf->num_clauses(), cnf->var_to_level().size());
     if (!schedule) {
       return -1; // Parser error has been printed
+    }
+  }
+
+  // The weights of the count, by label: the construction gives each variable its level as its
+  // label.
+  const std::vector<variable_weights>& weights = cnf->weights();
+  exact_weights exact_by_label;
+  double_weights double_by_label;
+  if (counting) {
+    exact_by_label.resize(weights.size());
+    double_by_label.resize(weights.size());
+    for (size_t x = 0; x < weights.size(); ++x) {
+      const unsigned label   = cnf->var_to_level()[x];
+      exact_by_label[label]  = { weights[x].low.exact(), weights[x].high.exact() };
+      double_by_label[label] = { weights[x].low.approx(), weights[x].high.approx() };
     }
   }
 
@@ -908,7 +1250,29 @@ run_cnf(int argc, char** argv)
     // ========================================================================
     // Count number of solutions
     time_duration counting_time = 0;
-    if (satcount) {
+    if (counting) {
+      // An adapter that counts both ways reports the exact count first
+      if constexpr (counts_exact) {
+        mpq_t count;
+        mpq_init(count);
+        const time_point t5 = now();
+        adapter.wmc_rat(res, exact_by_label, count);
+        const time_point t6 = now();
+        counting_time += duration_ms(t5, t6);
+        print_count("count", rational_string(count), "exact", duration_ms(t5, t6));
+        mpq_clear(count);
+      }
+      if constexpr (counts_double) {
+        const time_point t5 = now();
+        const double count  = adapter.wmc(res, double_by_label);
+        const time_point t6 = now();
+        counting_time += duration_ms(t5, t6);
+        print_count(counts_exact ? "count (double)" : "count",
+                    double_string(count),
+                    "double",
+                    duration_ms(t5, t6));
+      }
+    } else if (satcount) {
       std::cout << json::field("satcount") << json::brace_open << json::endl << json::flush;
 
       const time_point t5 = now();

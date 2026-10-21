@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "../common/adapter.h"
@@ -370,6 +371,47 @@ public:
 
     return checked_satcount(aytdd_bcdd_sat_count_double(aytdd::mgr, f.f, _varcount)
                             / std::pow(2, excess_variables));
+  }
+
+  /// \brief The weighted model count of f over all variables, exactly, stored into 'out'.
+  ///
+  /// The weights 'weights[x] = (low, high)' of the negative and the positive literal of each
+  /// variable 'x', indexed as 'ithvar', form a labeling of literals over the rationals, under sum
+  /// and product.
+  inline void
+  wmc_rat(const aytdd::bcdd_function& f,
+          const std::vector<std::pair<mpq_srcptr, mpq_srcptr>>& weights,
+          mpq_t out)
+  {
+    if (weights.size() != static_cast<size_t>(_varcount)) {
+      throw std::invalid_argument("aytdd: expected one pair of weights per variable");
+    }
+    aytdd_labeling* labeling = aytdd_labeling_new(
+      _varcount, AYTDD_SEMIRING_SUM_PRODUCT, AYTDD_LABELING_LITERAL, AYTDD_NUMBER_TYPE_RAT);
+    for (uint32_t x = 0; x < weights.size(); ++x) {
+      aytdd_labeling_set_rat(labeling, x, weights[x].first, weights[x].second);
+    }
+    aytdd_bcdd_amc_rat(aytdd::mgr, f.f, labeling, out);
+    aytdd_labeling_free(labeling);
+  }
+
+  /// \brief The weighted model count of f over all variables, in double precision.
+  ///
+  /// The weights are those of 'wmc_rat', each rounded to the nearest double.
+  inline double
+  wmc(const aytdd::bcdd_function& f, const std::vector<std::pair<double, double>>& weights)
+  {
+    if (weights.size() != static_cast<size_t>(_varcount)) {
+      throw std::invalid_argument("aytdd: expected one pair of weights per variable");
+    }
+    aytdd_labeling* labeling = aytdd_labeling_new(
+      _varcount, AYTDD_SEMIRING_SUM_PRODUCT, AYTDD_LABELING_LITERAL, AYTDD_NUMBER_TYPE_DOUBLE);
+    for (uint32_t x = 0; x < weights.size(); ++x) {
+      aytdd_labeling_set_double(labeling, x, weights[x].first, weights[x].second);
+    }
+    const double count = aytdd_bcdd_amc_double(aytdd::mgr, f.f, labeling);
+    aytdd_labeling_free(labeling);
+    return count;
   }
 
   /// \brief The cube of the literals of a path from f to true, false when f is false.
