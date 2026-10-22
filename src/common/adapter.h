@@ -2,6 +2,7 @@
 #define BDD_BENCHMARK_COMMON_ADAPTER_H
 
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <cassert>
 #include <stdexcept>
@@ -55,6 +56,21 @@ checked_satcount(const double count)
     throw std::overflow_error("model count is not an integer below 2^64");
   }
   return static_cast<uint64_t>(count);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+/// \brief Ends a run that the BDD package cannot continue for lack of memory.
+///
+/// \details The package's own message is printed to the standard error, and
+///          the process exits with the status 4, which the benchmarks reserve
+///          for this outcome, as they reserve 3 for a task the package does not
+///          support.
+////////////////////////////////////////////////////////////////////////////////
+[[noreturn]] inline void
+exit_out_of_memory(const std::string& message)
+{
+  std::cerr << message << std::endl;
+  std::exit(4);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

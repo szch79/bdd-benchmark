@@ -181,7 +181,8 @@ packages.
   BuDDy extended with the generation of clausal proofs. Every BDD it computes
   carries a clause of an LRAT proof stating that the input clauses imply it, so
   that deriving false refutes them. It is built only for the CNF benchmark, see
-  its option `-p`. TBUDDY sizes its tables itself, so `-M` has no effect.
+  its option `-p`. TBUDDY chooses the initial size of its node table itself and
+  grows the table up to the nodes that fit into `-M`.
 
 
 |                    | **Adiar** | **Aytdd** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **RSDD** | **Ruddy** | **SimpleABC** | **Sylvan** |
@@ -390,7 +391,8 @@ interface to configure the BDD library in question:
 
 - **`-M <int>`** (default: *128*)
 
-  Amount of memory (in MiB) to be dedicated to the BDD library.
+  Amount of memory (in MiB) to be dedicated to the BDD library, see
+  [Memory](#memory).
 
   Note, that the memory you set is only for the BDD package. So, the program
   will either use swap or be killed if the BDD package takes up more memory in
@@ -418,6 +420,54 @@ of memory and 4 threads as follows:
 
 Furthermore, each benchmark requires options. See `-h` or the [Benchmarks
 Section](#benchmarks) for details.
+
+### Memory
+
+The option `-M` is the memory of the BDD package for its nodes and its caches.
+Each adapter passes it to the package's own limit where the package has one, and
+otherwise derives from it the sizes that the package lets it choose, so that
+what `-M` bounds, and how strictly, is a property of the package. The
+executables do not bound the memory of a whole run, which includes the data of
+the benchmark; a cap on it, the same for every run, is left to whatever runs
+them. A package that the adapter's code finds out of memory ends the run with
+status 4, which the benchmarks reserve for this outcome, as they reserve status
+3 for a task that the package does not support.
+
+The table states for each package whether `-M` sizes its node table, whether its
+caches have a size fixed from `-M` or grow with the work, whether the package
+stops itself at `-M`, and what it then prints, on the standard error, and with
+which exit status.
+
+| **Package**   | **Node table**                                                                                       | **Caches**                                                                             | **Stops at `-M`**                      | **Message and exit status**                                                   |
+|---------------|------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------------|-------------------------------------------------------------------------------|
+| **Aytdd**     | initial capacity from `-M`, past which it grows                                                      | fixed from `-M`                                                                        | no, the table holds 2^31 - 1 decisions | a Lean panic `the node table has overflowed`, 1                               |
+| **aytdd_ot**  | as Aytdd                                                                                             | as Aytdd                                                                               | as Aytdd                               | as Aytdd                                                                      |
+| **BuDDy**     | fixed from `-M`                                                                                      | fixed from `-M`, six caches                                                            | yes                                    | `BDD error: Number of nodes reached user defined maximum`, 4                  |
+| **CUDD**      | grows from a small start, `-M` sets how readily it collects garbage instead of growing               | grow with the hit rate, up to a third of `-M`                                          | no                                     | none                                                                          |
+| **LibBDD**    | none shared, `-M` bounds the nodes of all live BDDs after each operation                             | local to each operation                                                                | yes, between operations                | `Too many nodes (n > m)`, 134 (abort)                                         |
+| **OxiDD**     | fixed from `-M`                                                                                      | fixed from `-M`                                                                        | yes                                    | a Rust panic `the given function is invalid: OutOfMemory`, 134 (abort)        |
+| **RSDD**      | grows without bound                                                                                  | grow without bound                                                                     | no                                     | none                                                                          |
+| **Ruddy**     | grows, the C interface bounds it by `-M` after each operation                                        | local to each operation                                                                | yes, between operations                | `ruddy: the node table needs n slots, more than the budget of m`, 134 (abort) |
+| **SimpleABC** | fixed from `-M`                                                                                      | fixed from `-M`, a cache of conjunctions                                               | yes                                    | `simpleabc: out of memory, the node table is full`, 4                         |
+| **Sylvan**    | grows from a small start up to a maximum from `-M`                                                   | grow with the table up to a maximum from `-M`                                          | yes                                    | `BDD Unique table full, n of m buckets filled!`, 1                            |
+| **TBUDDY**    | grows from a size of its own, 200,000 nodes below 1,000 clauses and 2,000,000 from there, up to `-M` | grow with the table, one entry per eight nodes                                         | yes                                    | `BDD error: Number of nodes reached user defined maximum`, 4                  |
+
+The arithmetic by which an adapter turns `-M` into sizes rests on the sizes of
+the package's nodes and cache entries, and some of it is inherited from upstream
+as it is. The BuDDy adapter assumes nodes of 24 bytes and cache entries of 16,
+where BuDDy's are 20 and 24 bytes, and its cache size is always one entry per 32
+nodes in each of the six caches, since the memory left by the nodes is computed
+but not used. The LibBDD adapter assumes nodes of 16 bytes, where LibBDD's are
+12. The tables of Sylvan and SimpleABC have a power of two of entries, so that
+they take between half and all of `-M`. SimpleABC counts 30 bytes per slot, or
+31 above 254 variables, and not a word in each of the two tables of the vector
+compositions, which are allocated only by a composition; a `-M`
+that gives fewer slots than the variables plus one is reported by the adapter,
+with exit status 1. TBUDDY counts 31 bytes per node, a node of 28 bytes and an
+eighth of a cache entry of 24, and a `-M` below its initial table is reported by
+the adapter, with exit status 1. Aytdd, whose table grows past `-M`, CUDD, which
+takes `-M` as a target rather than a limit, and RSDD, which has no setting for
+it, go on until the cap of the run.
 
 ## Benchmarks
 

@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -31,8 +32,16 @@
 /// - tbdd_init:
 ///     Takes the input clauses and the variable order, writes the proof's
 ///     premises, and initialises BuDDy itself, with a table size chosen from the
-///     number of clauses (`prover.c`). The memory option `-M` is therefore not
-///     honoured. It is called from `init_proof`, once the CNF is parsed.
+///     number of clauses (`prover.c`), which then grows with the computation.
+///     It is called from `init_proof`, once the CNF is parsed.
+///
+/// - bdd_setmaxnodenum:
+///     Bounds the growth of the table by the nodes that fit into `-M`. A node
+///     takes 28 bytes, as it carries the extension variable and the defining
+///     clause of the proof (`BddNode` in `kernel.h`), and `tbdd_init` gives the
+///     one operator cache an entry of 24 bytes (`BddCacheData` in `cache.h`)
+///     per 8 nodes of the table, which it keeps as the table grows (`prover.c`),
+///     so that a node takes 31 bytes in all.
 ///
 /// - tbdd_done:
 ///     Not called. It prints statistics to standard output, where the JSON of
@@ -42,6 +51,25 @@
 /// BuDDy's variable `x` is the CNF variable `x`, variable 0 is unused, and the
 /// order puts the variable of the benchmark's level `l` at BuDDy's level `l+1`.
 ////////////////////////////////////////////////////////////////////////////////
+
+/// Memory per node of the table of TBUDDY, its share of the operator cache included
+constexpr size_t tbuddy_bytes_per_node = 31u;
+
+/// The error handler installed by `bdd_init`, to which `tbuddy_error_handler` leaves every error
+/// other than the lack of a node or of memory.
+static bddinthandler tbuddy_default_error_handler = nullptr;
+
+/// Ends the run as out of memory when TBUDDY finds no free node in a table that has reached the
+/// maximum set from `-M`, or fails to allocate memory, and hands every other error to the handler
+/// installed before.
+inline void
+tbuddy_error_handler(int e)
+{
+  if (e == BDD_NODENUM || e == BDD_MEMORY) {
+    exit_out_of_memory(std::string("BDD error: ") + bdd_errstring(e));
+  }
+  if (tbuddy_default_error_handler) { tbuddy_default_error_handler(e); }
+}
 
 /// A trusted BDD of TBUDDY. The functions of `tbdd.h` take non-constant
 /// references, hence the mutable member.
@@ -173,6 +201,21 @@ public:
       std::cerr << "TBUDDY initialisation failed with code " << code << "\n";
       return false;
     }
+
+    // `bdd_setmaxnodenum` refuses a maximum that is not above the size of the table by calling the
+    // error handler, which ends the run, so a smaller '-M' is reported here instead.
+    const size_t mib       = 1024 * 1024;
+    const size_t max_nodes = std::min<size_t>(static_cast<size_t>(M) * mib / tbuddy_bytes_per_node,
+                                              std::numeric_limits<int>::max());
+    const size_t allocated = bdd_getallocnum();
+    if (max_nodes <= allocated) {
+      // The least '-M' whose nodes exceed the table
+      const size_t start_mib = (tbuddy_bytes_per_node * (allocated + 1) + mib - 1) / mib;
+      std::cerr << "tbuddy: -M below the " << start_mib << " MiB the package allocates at start\n";
+      std::exit(1);
+    }
+    bdd_setmaxnodenum(static_cast<int>(max_nodes));
+    tbuddy_default_error_handler = bdd_error_hook(tbuddy_error_handler);
 
     // Disable the default gbc_handler installed by `bdd_init`, which prints on standard output
     bdd_gbc_hook(NULL);

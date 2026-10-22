@@ -92,6 +92,21 @@ cache_size(const size_t memory_bytes, const int nodes)
   return std::max(min_cache, std::min(max_cache, max_cache));
 }
 
+/// The error handler installed by `bdd_init`, to which `buddy_error_handler` leaves every error
+/// other than the lack of a node or of memory.
+static bddinthandler buddy_default_error_handler = nullptr;
+
+/// Ends the run as out of memory when BuDDy finds no free node in its table, which is fixed in
+/// size, or fails to allocate memory, and hands every other error to the handler installed before.
+inline void
+buddy_error_handler(int e)
+{
+  if (e == BDD_NODENUM || e == BDD_MEMORY) {
+    exit_out_of_memory(std::string("BDD error: ") + bdd_errstring(e));
+  }
+  if (buddy_default_error_handler) { buddy_default_error_handler(e); }
+}
+
 class buddy_bdd_adapter
 {
 public:
@@ -128,6 +143,7 @@ public:
     const int caches = cache_size(memory_bytes, nodes);
 
     bdd_init(nodes, caches);
+    buddy_default_error_handler = bdd_error_hook(buddy_error_handler);
 
     // Set cache ratio if table changes in size. This is disabled, since the
     // table size is fixed below.

@@ -3,8 +3,10 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <iostream>
+#include <new>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -24,6 +26,17 @@ namespace simpleabc
   /// produced it, and each benchmark builds exactly one manager, so the adapter keeps it here
   /// rather than inside every BDD.
   inline Abc_BddMan* mgr = nullptr;
+
+  /// \brief The memo tables of the two vector compositions of the adapter, one for each of its two
+  ///        substitutions.
+  ///
+  /// The package memoises a composition in a table the caller provides and keeps across calls with
+  /// the same substitution, indexed by node, with the result plus one as entry and zero for an
+  /// empty one.  A garbage collection frees nodes whose slots are then reused, so the entries are
+  /// cleared after each collection.  A table has a word per slot of the node table and is
+  /// allocated by the first composition that uses it.
+  inline unsigned* memo_relnext = nullptr;
+  inline unsigned* memo_relprev = nullptr;
 
   /// \brief A BDD of that manager, registered as a root while it lives.
   ///
@@ -183,11 +196,13 @@ namespace simpleabc
     Vec_Int_t* roots = bcdd_function::roots();
     Abc_BddGarbageCollect(mgr, roots);
     Vec_IntFree(roots);
+    for (unsigned* memo : { memo_relnext, memo_relprev }) {
+      if (memo) { std::fill_n(memo, mgr->nObjsAlloc, 0u); }
+    }
 
     res = op();
     if (Abc_BddLitIsInvalid(res)) {
-      std::cerr << "simpleabc: out of memory, the node table is full" << std::endl;
-      exit(-1);
+      exit_out_of_memory("simpleabc: out of memory, the node table is full");
     }
     return res;
   }
@@ -247,10 +262,13 @@ public:
   ///
   /// Each slot of the table takes 30 bytes, or 31 with more than 254 variables, as the sum of a
   /// unique-table head, a chain link, the two children, the variable, the mark and a 12-byte entry
-  /// of the direct-mapped cache of conjunctions.  The table holds the largest power of two of
-  /// slots that fits in '-M'.  The package grows its table only through its own driver, which is
-  /// not used here, so the budget is fixed, as for the other packages; garbage is collected by the
-  /// adapter when the table fills.
+  /// of the direct-mapped cache of conjunctions.  The memo tables of the compositions, a word per
+  /// slot each, are allocated only by a composition and are not counted.  The table holds the
+  /// largest power of two of slots that fits in '-M'.  The package grows its table only through
+  /// its own driver, which is not used here, so the budget is fixed, as for the other packages;
+  /// garbage is collected by the adapter when the table fills.
+  /// The package needs a slot for each variable and one for the constant, and it aborts on a
+  /// smaller table, so the adapter reports a '-M' too small for that.
   simpleabc_bcdd_adapter(int varcount)
     : _varcount(varcount)
   {
@@ -261,11 +279,21 @@ public:
     unsigned slots = 1;
     while (static_cast<size_t>(slots) * 2 <= max_slots) { slots *= 2; }
 
+    if (slots < static_cast<unsigned>(varcount) + 1) {
+      std::cerr << "simpleabc: -M gives " << slots << " slots, fewer than the " << varcount
+                << " variables plus one\n";
+      std::exit(1);
+    }
+
     simpleabc::mgr = Abc_BddManAlloc(varcount, slots, 0, nullptr, 0);
   }
 
   ~simpleabc_bcdd_adapter()
   {
+    std::free(simpleabc::memo_relnext);
+    std::free(simpleabc::memo_relprev);
+    simpleabc::memo_relnext = nullptr;
+    simpleabc::memo_relprev = nullptr;
     if (_vars_relnext) { Vec_IntFree(_vars_relnext); }
     if (_subst_relnext) { Vec_IntFree(_subst_relnext); }
     if (_vars_relprev) { Vec_IntFree(_vars_relprev); }
@@ -462,7 +490,7 @@ public:
       }
     }
     const simpleabc::bcdd_function next = exists(states & rel, _vars_relnext);
-    return compose(next, _subst_relnext);
+    return compose(next, _subst_relnext, simpleabc::memo_relnext);
   }
 
   /// \brief The predecessors of 'states' under 'rel', renaming each current variable to its next
@@ -480,7 +508,7 @@ public:
         Vec_IntPush(_subst_relprev, Abc_BddLitIthVar(x | 1));
       }
     }
-    const simpleabc::bcdd_function prev = compose(states, _subst_relprev);
+    const simpleabc::bcdd_function prev = compose(states, _subst_relprev, simpleabc::memo_relprev);
     return exists(prev & rel, _vars_relprev);
   }
 
@@ -658,18 +686,17 @@ private:
     });
   }
 
-  /// \brief The simultaneous substitution of a literal for each variable of f.
-  ///
-  /// The package memoises the composition in an array the caller provides, one word per slot of
-  /// the node table, which is allocated afresh for every attempt because a collection in between
-  /// invalidates its entries.
+  /// \brief The simultaneous substitution of a literal for each variable of f, memoised in the
+  ///        memo table of the substitution, which is allocated on the first call.
   inline simpleabc::bcdd_function
-  compose(const simpleabc::bcdd_function& f, Vec_Int_t* subst)
+  compose(const simpleabc::bcdd_function& f, Vec_Int_t* subst, unsigned*& memo)
   {
-    return simpleabc::retrying([&]() {
-      std::vector<unsigned> cache(simpleabc::mgr->nObjsAlloc, 0);
-      return Abc_BddVectorCompose(simpleabc::mgr, f.f, subst, cache.data(), 1);
-    });
+    if (!memo) {
+      memo = static_cast<unsigned*>(std::calloc(simpleabc::mgr->nObjsAlloc, sizeof(unsigned)));
+      if (!memo) { throw std::bad_alloc(); }
+    }
+    return simpleabc::retrying(
+      [&]() { return Abc_BddVectorCompose(simpleabc::mgr, f.f, subst, memo, 1); });
   }
 
   /// \brief A fraction 'mantissa * 2^exponent' with the mantissa in [2^-64, 1], or zero.
