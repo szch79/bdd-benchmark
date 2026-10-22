@@ -65,9 +65,10 @@ The weights follow the format of the model counting competition 2022. The line `
 that the file is an instance of weighted model counting, and the line `c p weight L W 0` gives the
 literal `L`, a variable or its negation, the weight `W`, a decimal with an optional fraction and
 an optional exponent. These lines may come before or after the line `p cnf`, and a literal
-without one has the weight 1. The benchmark reads each weight exactly as a rational, and as the
-`double` nearest to it for the packages that count in double precision. These files give both
-literals of every variable a weight, after the clauses.
+without one has the weight 1. The line `c expected wmc V` gives the expected count `V`, a decimal
+of the same form, with which the benchmark compares its count. The benchmark reads each weight
+exactly as a rational, and as the `double` nearest to it for the packages that count in double
+precision. These files give both literals of every variable a weight, after the clauses.
 
 The count of RSDD sums over the paths to true of a BDD the products of the weights of the
 literals on each path, so a variable that a path skips contributes the factor 1 rather than the

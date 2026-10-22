@@ -258,10 +258,11 @@ apt install libboost-all-dev
 
 **Aytdd**
 
-Aytdd is a Lean library, which this CMake project does not build. Build its
-archive with `lake build libaytdd` in the Aytdd repository. When this repository
-is its submodule, the archive is found automatically; otherwise, pass its path
-with `-D AYTDD_ROOT=<path>`, or turn the package off with `-D AYTDD=OFF`. Its
+Aytdd is a Lean library, which this CMake project does not build, so the package
+is off by default and switched on with `-D AYTDD=ON`. Build its archive with
+`lake build libaytdd` in the Aytdd repository. When this repository is its
+submodule, the archive is found automatically; otherwise, pass its path with
+`-D AYTDD_ROOT=<path>`. Its
 headers include *gmp.h* of the *GMP Library*, found as for the CNF benchmark.
 The archive carries the GMP of the Lean toolchain, so the Aytdd executables
 link that one rather than `GMP_LIBRARY`.
@@ -405,7 +406,9 @@ interface to configure the BDD library in question:
 
 - **`-R`**
 
-  Enable dynamic variable reordering (if available with said BDD package).
+  Enable dynamic variable reordering (if available with said BDD package). The
+  CNF benchmark rejects it together with `-s` and `-b`, which read the variable
+  order as fixed.
 
 - **`-T <path>`** (default: */tmp*, */usr/tmp/*, ...)
 
@@ -431,7 +434,9 @@ executables do not bound the memory of a whole run, which includes the data of
 the benchmark; a cap on it, the same for every run, is left to whatever runs
 them. A package that the adapter's code finds out of memory ends the run with
 status 4, which the benchmarks reserve for this outcome, as they reserve status
-3 for a task that the package does not support.
+3 for a task that the package does not support. A model count that a package
+computes in floating point and that is not an integer below 2^64 ends the run
+with status 5 and a message on the standard error.
 
 The table states for each package whether `-M` sizes its node table, whether its
 caches have a size fixed from `-M` or grow with the work, whether the package
@@ -504,6 +509,14 @@ the clause list as an approximately balanced tree, e.g.
 makes sense to preprocess raw CNF files using external tools and infer good
 variable and clause orders.
 
+The variable order is given by the comment lines before the problem line whose
+first word is a number, one variable per line from the top of the diagram down.
+If the file gives an order, it must name each variable exactly once, and a file
+that names a variable twice, a variable above the number of variables of the
+problem line, or a number too large to be a variable is rejected with the
+variable in the message. A comment line whose first word is a number after the
+problem line is ignored with a warning on the standard error.
+
 ```bash
 ./build/src/${LIB}_cnf_${KIND} -f benchmarks/cnf/sample.cnf
 ```
@@ -512,20 +525,24 @@ The benchmark can be configured with the following options:
 
 - **`-c`**
 
-  Count the satisfying assignments of the conjunction.
+  Count the satisfying assignments of the conjunction. A package that counts in
+  floating point ends the run with status 5 if the count is not an integer below
+  2^64, see [Memory](#memory).
 
 - **`-q wmc`**
 
   Count the weighted models of the conjunction under the weights that the file
   gives its literals in the format of the model counting competition 2022, see
   [benchmarks/wmc](benchmarks/wmc). The count is timed apart from the
-  construction, added to the total time, and replaces the one of `-c`:
+  construction and added to the total time:
 
   ```json
   "count": {
     "query": "wmc",
     "result": "208141/1000000",
     "type": "exact",
+    "expected": "208141/1000000",
+    "correct": true,
     "time (ms)": 0
   }
   ```
@@ -533,12 +550,21 @@ The benchmark can be configured with the following options:
   An exact result is a reduced fraction `num/den`, or an integer, and a result
   in double precision is the shortest decimal that reads back as the `double`.
   Aytdd counts both ways and reports the count in double precision as a second
-  block `"count (double)"` of the same form; RSDD counts in double precision,
-  which is the weighted model count only if every variable that a path to true
-  skips has weights summing to one, as on the files of
-  [benchmarks/wmc](benchmarks/wmc). Every other package exits with status 3. The
-  option `-q` is rejected together with `-s` and `-b`, and on a file
-  without the line `c t wmc`.
+  block `"count (double)"` of the same form, whose time the total does not
+  include; RSDD counts in double precision, which is the weighted model count
+  only if every variable that a path to true skips has weights summing to one,
+  as on the files of [benchmarks/wmc](benchmarks/wmc). Every other package exits
+  with status 3.
+
+  A file may state the count it expects in the comment line `c expected wmc V`,
+  where `V` is a decimal of the same form as a weight. The block then also
+  reports the expected count, in the form of its result, and whether the result
+  is correct: an exact result must equal the expected count, and a result in
+  double precision must lie within a relative error of at most 10^-9 of it,
+  computed exactly. A block of a file without that line has neither field. A
+  weight that is not zero but so small that its nearest `double` is zero is
+  rejected, as is an expected count given twice. The option `-q` is rejected
+  together with `-c`, `-s` and `-b`, and on a file without the line `c t wmc`.
 
   ```bash
   ./build/src/aytdd_cnf_bcdd -f benchmarks/wmc/cancer-query.cnf -q wmc
@@ -550,6 +576,7 @@ The benchmark can be configured with the following options:
   which interleaves conjunctions with existential quantification and decides
   whether the CNF is satisfiable. The format is that of the SAT solver `tbsat`
   of Bryant's TBUDDY package, see [benchmarks/cnf-schedule](benchmarks/cnf-schedule).
+  Only one schedule may be given.
 
   ```bash
   ./build/src/${LIB}_cnf_${KIND} -f benchmarks/cnf-schedule/pigeon-scan-015.cnf -s benchmarks/cnf-schedule/pigeon-scan-015.schedule
@@ -578,7 +605,10 @@ The benchmark can be configured with the following options:
   ./build/src/tbuddy_cnf_bdd -f benchmarks/cnf-bucket/urquhart-li-03.cnf -b -p urquhart-li-03.lrat
   ```
 
-The options `-s` and `-b` are not supported for ZDDs.
+The options `-s` and `-b` exclude each other and are not supported for ZDDs.
+They are rejected together with `-c` and `-q`, since they decide satisfiability
+and count nothing, and together with dynamic variable reordering (`-R`), since
+both read the variable order as fixed.
 
 
 ### Game Of Life

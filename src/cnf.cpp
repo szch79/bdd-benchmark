@@ -85,6 +85,7 @@ public:
   // conjunctions with existential quantification and therefore decide only
   // whether the CNF is satisfiable. With `-s`, a schedule file lists the
   // operations; with `-b`, bucket elimination orders them by the variable order.
+  // Both read the variable order as fixed and are rejected with reordering.
   //
   // A package whose operations generate a clausal proof, TBUDDY, writes it to
   // the path given by `-p`. Its operations prove that the input clauses imply
@@ -94,7 +95,8 @@ public:
   // The option `-q wmc` counts the weighted models of the conjunction under the
   // weights of the literals that the file gives in the format of the model
   // counting competition 2022. A package counts exactly, in double precision,
-  // or both, as its adapter provides; the count replaces the one of `-c`.
+  // or both, as its adapter provides, and the count is compared with the one
+  // that the file states it expects. The option excludes `-c`.
 
   /// Parse one command line option, where `c` is one of keys specified in the
   /// `args` constant of this class and `arg` is the option's value (if the
@@ -125,6 +127,10 @@ public:
     case 's': {
       if (!std::filesystem::exists(arg)) {
         std::cerr << "File '" << arg << "' does not exist\n";
+        return true;
+      }
+      if (!schedule_file.empty()) {
+        std::cerr << "Only one schedule file may be given\n";
         return true;
       }
       schedule_file = arg;
@@ -162,67 +168,69 @@ unsigned_abs(int value)
   return value < 0 ? 0 - unsigned(value) : unsigned(value);
 }
 
-/// The weight of a literal, an exact rational together with the `double` nearest to it
+/// A decimal of the file, the weight of a literal or the expected count, as the exact rational it
+/// denotes together with the `double` nearest to it
 ///
 /// A GMP `mpq_t` is an array of one structure, which is neither copied by assignment nor
 /// released on its own, so this class holds one and copies its value.
-class literal_weight
+class decimal
 {
   mpq_t _exact;
   double _approx = 1.0;
 
 public:
-  /// The weight one
-  literal_weight()
+  /// The number one
+  decimal()
   {
     mpq_init(_exact);
     mpq_set_ui(_exact, 1, 1);
   }
 
-  literal_weight(const literal_weight& w)
+  decimal(const decimal& d)
   {
     mpq_init(_exact);
-    mpq_set(_exact, w._exact);
-    _approx = w._approx;
+    mpq_set(_exact, d._exact);
+    _approx = d._approx;
   }
 
-  literal_weight&
-  operator=(const literal_weight& w)
+  decimal&
+  operator=(const decimal& d)
   {
-    mpq_set(_exact, w._exact);
-    _approx = w._approx;
+    mpq_set(_exact, d._exact);
+    _approx = d._approx;
     return *this;
   }
 
-  ~literal_weight()
+  ~decimal()
   {
     mpq_clear(_exact);
   }
 
-  /// The exact weight
+  /// The exact value
   mpq_srcptr
   exact() const
   {
     return _exact;
   }
 
-  /// The `double` nearest to the exact weight
+  /// The `double` nearest to the exact value
   double
   approx() const
   {
     return _approx;
   }
 
-  /// Set the weight to the decimal `text`: an optional sign, digits with an optional fraction
+  /// Set the value to the decimal `text`: an optional sign, digits with an optional fraction
   /// after a point, and an optional exponent of at most four digits after `e` or `E`
   ///
-  /// The exact weight is the rational the decimal denotes, computed in integers, and the
+  /// The exact value is the rational the decimal denotes, computed in integers, and the
   /// `double` is the one `strtod` reads from `text`, which is correctly rounded.
   ///
   /// Returns `false` if `text` is not such a decimal or its value lies beyond the range of
-  /// `double`.
+  /// `double`, either above the largest `double` or so close to zero that the nearest `double`
+  /// is zero although the value is not.
   bool
-  set_decimal(const std::string& text)
+  parse(const std::string& text)
   {
     // Split the decimal into its sign, its digits, the length of its fraction and its exponent
     size_t i            = 0;
@@ -256,6 +264,10 @@ public:
 
     const double approx = std::strtod(text.c_str(), nullptr);
     if (!std::isfinite(approx)) return false;
+    if (approx == 0.0
+        && std::any_of(digits.begin(), digits.end(), [](char digit) { return digit != '0'; })) {
+      return false;
+    }
 
     // The value is `digits * 10^(exponent - fraction)`
     const long shift = exponent - static_cast<long>(fraction);
@@ -280,8 +292,8 @@ public:
 /// The weights of the negative and the positive literal of a variable
 struct variable_weights
 {
-  literal_weight low;
-  literal_weight high;
+  decimal low;
+  decimal high;
 };
 
 class CNF
@@ -304,6 +316,9 @@ class CNF
   /// Whether the file states that it is an instance of weighted model counting (`c t wmc`)
   bool _weighted = false;
 
+  /// The weighted model count that the file states it expects (`c expected wmc`), if it does
+  std::optional<decimal> _expected;
+
   /// A weight line `c p weight L W 0`, before it is checked against the number of variables
   struct weight_line
   {
@@ -312,9 +327,11 @@ class CNF
   };
 
   /// Read a comment line, the text `comment` after its leading `c`, for the lines of weighted
-  /// model counting, `c t wmc` and `c p weight L W 0`, the latter into `weight_lines`
+  /// model counting, `c t wmc`, `c expected wmc V` and `c p weight L W 0`, the last into
+  /// `weight_lines`
   ///
-  /// Other comment lines are ignored. Returns `false` on a malformed weight line.
+  /// Other comment lines are ignored. Returns `false` on a malformed weight line, and on an
+  /// expected count that is malformed or given twice.
   bool
   read_weighted_comment(const std::string& comment, std::vector<weight_line>& weight_lines)
   {
@@ -323,6 +340,19 @@ class CNF
     if (!(words >> kind >> word)) return true;
     if (kind == "t") {
       if (word == "wmc") _weighted = true;
+      return true;
+    }
+    if (kind == "expected" && word == "wmc") {
+      std::string value;
+      if (_expected) {
+        std::cerr << "error: the expected count is given twice\n";
+        return false;
+      }
+      if (!(words >> value) || words >> word || !_expected.emplace().parse(value)) {
+        std::cerr << "error: expected `c expected wmc <decimal>` within the range of double, got `c"
+                  << comment << "`\n";
+        return false;
+      }
       return true;
     }
     if (kind != "p" || word != "weight") return true;
@@ -358,15 +388,26 @@ class CNF
         std::cerr << "error: weight of literal " << w.literal << " given twice\n";
         return false;
       }
-      given[index]           = true;
-      literal_weight& weight = w.literal > 0 ? _weights[var].high : _weights[var].low;
-      if (!weight.set_decimal(w.value)) {
+      given[index]    = true;
+      decimal& weight = w.literal > 0 ? _weights[var].high : _weights[var].low;
+      if (!weight.parse(w.value)) {
         std::cerr << "error: weight '" << w.value << "' of literal " << w.literal
                   << " is not a decimal within the range of double\n";
         return false;
       }
     }
     return true;
+  }
+
+  /// The first word of the text `comment` after the leading `c` of a comment line, if it consists
+  /// of digits, which makes the line a line of the variable order
+  static std::optional<std::string>
+  order_word(const std::string& comment)
+  {
+    std::istringstream words(comment);
+    std::string word;
+    if (words >> word && std::all_of(word.begin(), word.end(), ascii_isnumeric)) return word;
+    return {};
   }
 
 public:
@@ -388,13 +429,15 @@ public:
   ///
   /// The comment lines (starting with `c`) are used to specify the variable
   /// order. Here, variable 2 called "b" is at the top, then variable 1 "a"
-  /// follows, and so on. The variable order is optional but if present, if must
-  /// contain all variables.
+  /// follows, and so on. The variable order is optional but if present, it must
+  /// contain each variable exactly once and precede the problem line; a line of
+  /// the order after the problem line is ignored with a warning.
   ///
   /// The comment lines `c t wmc` and `c p weight L W 0` of the model counting
   /// competition 2022, before or after the problem line, state that the file is
   /// an instance of weighted model counting and give the literal `L` the weight
-  /// `W`, a decimal. A literal without such a line has the weight one.
+  /// `W`, a decimal. A literal without such a line has the weight one. The line
+  /// `c expected wmc V` states that the weighted model count is the decimal `V`.
   static std::optional<CNF>
   parse_dimacs_cnf(const std::string& path)
   {
@@ -405,7 +448,6 @@ public:
 
     // Parse the variable order
     std::vector<unsigned> var_order;
-    std::string tok;
     unsigned line = 0;
     while (input.good()) {
       const int c = input.get();
@@ -414,14 +456,20 @@ public:
         // Read the comment line as a whole, so that an empty one does not consume the next line
         std::string comment;
         std::getline(input, comment);
-        std::istringstream words(comment);
-        if (words >> tok && std::all_of(tok.begin(), tok.end(), ::isdigit)) {
+        if (const std::optional<std::string> word = order_word(comment)) {
           // Ignore lines where the token after `c` is not numeric. This allows extensions of the
           // format.
 
-          const unsigned var_id = std::stoul(tok);
+          // The problem line must give fewer than `INT_MAX` variables, and `strtoull` returns its
+          // largest value on overflow, which exceeds that bound as well
+          const unsigned long long var_id = std::strtoull(word->c_str(), nullptr, 10);
           if (var_id == 0) {
             std::cerr << "error: variable numbers must be > 0 (in variable order)\n";
+            return {};
+          }
+          if (var_id >= unsigned(std::numeric_limits<int>::max())) {
+            std::cerr << "error: variable " << *word << " of the variable order is too large (line "
+                      << line << ")\n";
             return {};
           }
           var_order.push_back(var_id - 1);
@@ -432,7 +480,7 @@ public:
         break;
       } else {
         std::cerr << "error: unexpected character '" << static_cast<char>(c)
-                  << "' at beginning of line" << line << "\n";
+                  << "' at beginning of line " << line << "\n";
         return {};
       }
     }
@@ -466,12 +514,17 @@ public:
       constexpr unsigned NO_VAR = std::numeric_limits<unsigned>::max();
       cnf._var_to_level.resize(nvars, NO_VAR);
       for (unsigned i = 0; i < nvars; i++) {
-        if (cnf._var_to_level[var_order[i]] != NO_VAR) {
-          std::cerr << "error: variable " << cnf._var_to_level[var_order[i]]
-                    << "occurs twice in order\n";
+        const unsigned var = var_order[i];
+        if (var >= nvars) {
+          std::cerr << "error: variable " << var + 1 << " in the variable order but there are only "
+                    << nvars << " variables\n";
           return {};
         }
-        cnf._var_to_level[var_order[i]] = i;
+        if (cnf._var_to_level[var] != NO_VAR) {
+          std::cerr << "error: variable " << var + 1 << " occurs twice in the variable order\n";
+          return {};
+        }
+        cnf._var_to_level[var] = i;
       }
 
       // Holds by the pigeonhole principle
@@ -491,7 +544,12 @@ public:
         input.get();
         std::string comment;
         std::getline(input, comment);
-        if (!cnf.read_weighted_comment(comment, weight_lines)) return {};
+        if (order_word(comment)) {
+          std::cerr << "warning: the line `c" << comment
+                    << "` of the variable order after the problem line is ignored\n";
+        } else if (!cnf.read_weighted_comment(comment, weight_lines)) {
+          return {};
+        }
         continue;
       }
 
@@ -508,7 +566,7 @@ public:
         clause_offset = cnf._clause_data.size();
       } else if (unsigned_abs(literal) > nvars) {
         std::cerr << "error: found literal " << literal << " but there are only " << nvars
-                  << "variables\n";
+                  << " variables\n";
         return {};
       } else {
         assert(literal != 0);
@@ -575,6 +633,13 @@ public:
   weighted() const
   {
     return _weighted;
+  }
+
+  /// The weighted model count that the file states it expects, if it does
+  const std::optional<decimal>&
+  expected() const
+  {
+    return _expected;
   }
 
   /// Call `f(begin, end)` for each clause, where `begin` and `end` are random access iterators over
@@ -756,11 +821,42 @@ double_string(const double d)
   return buf;
 }
 
-/// Print the block `name` of a weighted model count
+/// Whether the count in double precision `count` lies within a relative error of `1e-9` of the
+/// exact count `expected`, computed exactly
+bool
+within_relative_error(const double count, mpq_srcptr expected)
+{
+  if (!std::isfinite(count)) return false;
+  mpq_t error, bound;
+  mpq_init(error);
+  mpq_init(bound);
+  mpq_set_d(error, count);
+  mpq_sub(error, error, expected);
+  mpq_abs(error, error);
+  mpz_mul_ui(mpq_numref(error), mpq_numref(error), 1000000000);
+  mpq_canonicalize(error);
+  mpq_abs(bound, expected);
+  const bool within = mpq_cmp(error, bound) <= 0;
+  mpq_clear(error);
+  mpq_clear(bound);
+  return within;
+}
+
+/// The expected count of a block of a weighted model count, in the form of the block's result,
+/// and whether the result is correct
+struct count_check
+{
+  std::string expected;
+  bool correct;
+};
+
+/// Print the block `name` of a weighted model count, with the expected count and whether the
+/// count is correct where the file states the count it expects
 void
 print_count(const std::string& name,
             const std::string& result,
             const std::string_view type,
+            const std::optional<count_check>& check,
             const time_duration time)
 {
   std::cout << json::field(name) << json::brace_open << json::endl;
@@ -768,6 +864,11 @@ print_count(const std::string& name,
             << json::endl;
   std::cout << json::field("result") << json::value(result) << json::comma << json::endl;
   std::cout << json::field("type") << json::value(type) << json::comma << json::endl;
+  if (check) {
+    std::cout << json::field("expected") << json::value(check->expected) << json::comma
+              << json::endl;
+    std::cout << json::field("correct") << json::value(check->correct) << json::comma << json::endl;
+  }
   std::cout << json::field("time (ms)") << json::value(time) << json::endl;
   std::cout << json::brace_close << json::comma << json::endl << json::flush;
 }
@@ -1088,12 +1189,21 @@ run_cnf(int argc, char** argv)
     return -1;
   }
   const bool counting = weighted_count;
+  if (satcount && counting) {
+    std::cerr << "The weighted count (-q wmc) and the count of satisfying assignments (-c) "
+                 "exclude each other\n";
+    return -1;
+  }
   if (quantifying && (satcount || counting)) {
     std::cerr << "Quantifying runs decide satisfiability and do not count\n";
     return -1;
   }
   if (quantifying && Adapter::needs_extend) {
     std::cerr << "Quantifying runs need a BDD package\n";
+    return -1;
+  }
+  if (quantifying && enable_reordering) {
+    std::cerr << "Quantifying runs need a fixed variable order and exclude reordering (-R)\n";
     return -1;
   }
   constexpr bool proving = is_proof_generating<Adapter>::value;
@@ -1247,26 +1357,37 @@ run_cnf(int argc, char** argv)
     // Count number of solutions
     time_duration counting_time = 0;
     if (counting) {
-      // An adapter that counts both ways reports the exact count first
+      // An adapter that counts both ways reports the exact count first. The total time adds the
+      // time of this primary count only, and the count in double precision keeps its own.
+      const std::optional<decimal>& expected = cnf->expected();
       if constexpr (counts_exact) {
         mpq_t count;
         mpq_init(count);
         const time_point t5 = now();
         adapter.wmc_rat(res, exact_by_label, count);
         const time_point t6 = now();
-        counting_time += duration_ms(t5, t6);
-        print_count("count", rational_string(count), "exact", duration_ms(t5, t6));
+        counting_time       = duration_ms(t5, t6);
+        std::optional<count_check> check;
+        if (expected) {
+          check = count_check{ rational_string(expected->exact()),
+                               mpq_equal(count, expected->exact()) != 0 };
+        }
+        print_count("count", rational_string(count), "exact", check, counting_time);
         mpq_clear(count);
       }
       if constexpr (counts_double) {
         const time_point t5 = now();
         const double count  = adapter.wmc(res, double_by_label);
         const time_point t6 = now();
-        counting_time += duration_ms(t5, t6);
-        print_count(counts_exact ? "count (double)" : "count",
-                    double_string(count),
-                    "double",
-                    duration_ms(t5, t6));
+        const time_duration time = duration_ms(t5, t6);
+        if constexpr (!counts_exact) counting_time = time;
+        std::optional<count_check> check;
+        if (expected) {
+          check = count_check{ double_string(expected->approx()),
+                               within_relative_error(count, expected->exact()) };
+        }
+        print_count(
+          counts_exact ? "count (double)" : "count", double_string(count), "double", check, time);
       }
     } else if (satcount) {
       std::cout << json::field("satcount") << json::brace_open << json::endl << json::flush;

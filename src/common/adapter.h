@@ -47,13 +47,17 @@ ilog2(unsigned long long n)
 ///
 /// \details The conversion is exact below 2^53. A count that is not a number,
 ///          is negative, or is 2^64 or more has no such integer, and casting it
-///          is undefined behaviour, so the conversion throws instead.
+///          is undefined behaviour, so the run ends instead with a message on
+///          the standard error and the exit status 5. It does not throw, since
+///          an exception that passes through the frames of a package's worker
+///          threads aborts the process and truncates its output.
 ////////////////////////////////////////////////////////////////////////////////
 inline uint64_t
 checked_satcount(const double count)
 {
   if (!(count >= 0.0 && count < 18446744073709551616.0)) {
-    throw std::overflow_error("model count is not an integer below 2^64");
+    std::cerr << "The model count " << count << " is not an integer below 2^64" << std::endl;
+    std::exit(5);
   }
   return static_cast<uint64_t>(count);
 }
@@ -64,7 +68,8 @@ checked_satcount(const double count)
 /// \details The package's own message is printed to the standard error, and
 ///          the process exits with the status 4, which the benchmarks reserve
 ///          for this outcome, as they reserve 3 for a task the package does not
-///          support.
+///          support and 5 for a model count that `checked_satcount` cannot
+///          convert.
 ////////////////////////////////////////////////////////////////////////////////
 [[noreturn]] inline void
 exit_out_of_memory(const std::string& message)
