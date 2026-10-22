@@ -7,7 +7,6 @@
 #include <functional>
 #include <iostream>
 #include <new>
-#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -37,6 +36,9 @@ namespace simpleabc
   /// allocated by the first composition that uses it.
   inline unsigned* memo_relnext = nullptr;
   inline unsigned* memo_relprev = nullptr;
+
+  /// \brief The number of garbage collections the adapter has run.
+  inline size_t collections = 0;
 
   /// \brief A BDD of that manager, registered as a root while it lives.
   ///
@@ -196,6 +198,7 @@ namespace simpleabc
     Vec_Int_t* roots = bcdd_function::roots();
     Abc_BddGarbageCollect(mgr, roots);
     Vec_IntFree(roots);
+    ++collections;
     for (unsigned* memo : { memo_relnext, memo_relprev }) {
       if (memo) { std::fill_n(memo, mgr->nObjsAlloc, 0u); }
     }
@@ -531,7 +534,7 @@ public:
   ///
   /// The package has no model count.  As CUDD does, the adapter computes the fraction of all
   /// assignments that satisfy f, which does not depend on the set of variables, and scales it to
-  /// the 'vc' variables, so that the count of a bcdd_function over few of many variables does not
+  /// the 'vc' variables, so that the count of a function over few of many variables does not
   /// overflow on the way.
   inline uint64_t
   satcount(const simpleabc::bcdd_function& f, const size_t vc)
@@ -558,10 +561,28 @@ public:
     return res;
   }
 
+  /// \brief The cube of the values of the path of 'pickcube' on the variables of the cube c, false
+  ///        when f is false.
+  ///
+  /// The variables of c are those of its own path, which for a cube are all of its variables.  A
+  /// variable of c that the path of f does not test takes the value false, and the variables of
+  /// the path outside c are left out, as in CUDD's 'Cudd_bddPickOneMinterm'.
   inline simpleabc::bcdd_function
-  satone(const simpleabc::bcdd_function&, const simpleabc::bcdd_function&)
+  satone(const simpleabc::bcdd_function& f, const simpleabc::bcdd_function& c)
   {
-    throw std::logic_error("simpleabc: a satisfying cube over a set of variables is not supported");
+    if (Abc_BddLitIsConst0(f.f)) { return bot(); }
+
+    std::vector<char> value(_varcount, '0');
+    for (const auto& [x, v] : pickcube(f)) { value.at(x) = v; }
+
+    const std::vector<std::pair<uint32_t, char>> vars = pickcube(c);
+
+    simpleabc::bcdd_function res = top();
+    for (auto it = vars.rbegin(); it != vars.rend(); ++it) {
+      const uint32_t x = it->first;
+      res              = value.at(x) == '1' ? make_node(x, bot(), res) : make_node(x, res, bot());
+    }
+    return res;
   }
 
   /// \brief The literals of a path from f to true, by increasing variable, none at a constant.
@@ -626,16 +647,34 @@ public:
 
   // Statistics
 public:
-  /// \brief The number of slots of the node table ever used, since freed slots are reused.
+  /// \brief The number of slots of the node table in use, the constant and the variables
+  ///        included, whether or not their nodes are still reachable.
+  ///
+  /// The slots up to the high-water mark 'nObjs' are in use unless a garbage collection removed
+  /// them.  When the table is full, the package reuses removed slots one at a time from the lowest
+  /// one 'nMinRemoved', below which none is left, so the removed slots are counted from there at
+  /// each call rather than at the collection.
   inline size_t
   allocated_nodes()
   {
-    return simpleabc::mgr->nObjs;
+    size_t removed = 0;
+    for (int a = simpleabc::mgr->nMinRemoved; a < simpleabc::mgr->nObjs; ++a) {
+      if (Abc_BddBvarIsRemoved(simpleabc::mgr, a)) { ++removed; }
+    }
+    return simpleabc::mgr->nObjs - removed;
   }
 
   void
   print_stats()
-  {}
+  {
+    std::cout << "\n"
+              << "SimpleABC statistics:\n"
+              << "   Table:\n"
+              << "   | allocated nodes:     " << allocated_nodes() << "\n"
+              << "   | high-water mark:     " << simpleabc::mgr->nObjs << "\n"
+              << "   | slots:               " << simpleabc::mgr->nObjsAlloc << "\n"
+              << "   Garbage Collections:   " << simpleabc::collections << "\n";
+  }
 
 private:
   /// \brief The node on 'label' with the given children, which the variable order of the manager
@@ -699,7 +738,7 @@ private:
       [&]() { return Abc_BddVectorCompose(simpleabc::mgr, f.f, subst, memo, 1); });
   }
 
-  /// \brief A fraction 'mantissa * 2^exponent' with the mantissa in [2^-64, 1], or zero.
+  /// \brief A fraction 'mantissa * 2^exponent' with the mantissa in [1/2, 1), or zero.
   ///
   /// With thousands of variables the fraction of a subfunction falls below the range of a
   /// double, so the exponent is kept apart.
@@ -709,13 +748,11 @@ private:
     int exponent;
 
     static scaled
-    normalized(double mantissa, int exponent)
+    normalized(const double mantissa, const int exponent)
     {
-      while (mantissa != 0.0 && mantissa < std::ldexp(1.0, -64)) {
-        mantissa = std::ldexp(mantissa, 64);
-        exponent -= 64;
-      }
-      return { mantissa, exponent };
+      int shift;
+      const double m = std::frexp(mantissa, &shift);
+      return { m, exponent + shift };
     }
 
     scaled
@@ -727,36 +764,28 @@ private:
       return normalized(std::ldexp(mantissa, exponent - e) + std::ldexp(o.mantissa, o.exponent - e),
                         e - 1);
     }
-
-    scaled
-    complement() const
-    {
-      return normalized(1.0 - std::ldexp(mantissa, exponent), 0);
-    }
   };
 
-  /// \brief The fraction of the assignments that satisfy the bcdd_function of a literal, memoised
-  /// on
-  ///        regular literals and complemented by subtraction from one.
+  /// \brief The fraction of the assignments that satisfy the function of a literal, memoised on
+  ///        the literal.
   ///
-  /// A node's fraction is the mean of its children's, since each child is the bcdd_function under
-  /// one value of the variable, and the variables between a node and its child do not change it.
+  /// A node's fraction is the mean of its children's, since each child is the function under one
+  /// value of the variable, and the variables between a node and its child do not change it.  The
+  /// children of a complemented literal are the complements of the children of its node, so the
+  /// complement is carried down to the constants, and the two literals of a node are memoised
+  /// apart.  The complement is not taken as a subtraction from one, which rounds a fraction within
+  /// 2^-53 of one to one and its complement to zero.
   inline scaled
   fraction(const unsigned x, std::unordered_map<unsigned, scaled>& memo)
   {
-    if (Abc_BddLitIsConst(x)) { return { Abc_BddLitIsConst1(x) ? 1.0 : 0.0, 0 }; }
+    if (Abc_BddLitIsConst(x)) { return scaled::normalized(Abc_BddLitIsConst1(x) ? 1.0 : 0.0, 0); }
 
-    const unsigned reg = Abc_BddLitRegular(x);
+    const auto it = memo.find(x);
+    if (it != memo.end()) { return it->second; }
 
-    scaled p;
-    const auto it = memo.find(reg);
-    if (it != memo.end()) {
-      p = it->second;
-    } else {
-      p = fraction(Abc_BddThen(simpleabc::mgr, reg), memo)
-            .mean(fraction(Abc_BddElse(simpleabc::mgr, reg), memo));
-      memo.emplace(reg, p);
-    }
-    return Abc_BddLitIsCompl(x) ? p.complement() : p;
+    const scaled p = fraction(Abc_BddThen(simpleabc::mgr, x), memo)
+                       .mean(fraction(Abc_BddElse(simpleabc::mgr, x), memo));
+    memo.emplace(x, p);
+    return p;
   }
 };

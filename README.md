@@ -154,7 +154,8 @@ packages.
   A library with iterative algorithms whose unique node table is a trie local to
   each parent node rather than a hash table. It has no computed table that
   survives an operation, and no complement edges. Only its shared representation
-  is benchmarked.
+  is benchmarked. It has no renaming, so the adapter renames a variable by
+  quantifying it from the conjunction with its biconditional to the new one.
 
   We use the C FFI in `external/ruddy-ffi`, written for these benchmarks.
 
@@ -165,7 +166,10 @@ packages.
   The simple BDD package of a fork of ABC, with depth-first algorithms, a unique
   node table and a direct-mapped cache of conjunctions. It has no reference
   counts; the adapter drives its garbage collection from the roots the
-  benchmark still holds. Quantification has no memoization.
+  benchmark still holds. Its quantification has no memoization, and the adapter
+  calls it as it is. It has no model count, the only package without one, so the
+  adapter counts models as CUDD does, by the fraction of the satisfying
+  assignments.
 
 
 - [**Sylvan**](https://github.com/trolando/sylvan)

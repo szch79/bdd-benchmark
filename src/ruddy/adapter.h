@@ -321,6 +321,10 @@ private:
   ruddy::manager _manager;
   ruddy::bdd_function _latest_build;
 
+  std::vector<uint32_t> _vars_relnext;
+  std::vector<uint32_t> _vars_relprev;
+  ruddy::bdd_function _biconditionals;
+
   // Init and Deinit
 public:
   /// \brief A manager with automatic garbage collection.
@@ -497,16 +501,40 @@ public:
     return f.forall(vars.data(), vars.size());
   }
 
+  /// \brief The successors of 'states' under 'rel', whose current variables are the even ones
+  ///        and whose next variables are the odd ones.
+  ///
+  /// The library has no renaming and no composition, so a next variable 'x + 1' is renamed to its
+  /// current one 'x' by the quantification of 'x + 1' from the conjunction with 'x <-> x + 1'.
+  /// The conjunction of 'states' and 'rel' is quantified over the current variables, and no
+  /// current variable is left, so all next variables are renamed at once, by one conjunction with
+  /// the biconditionals of all pairs and one quantification over all next variables.
   inline ruddy::bdd_function
-  relnext(const ruddy::bdd_function&, const ruddy::bdd_function&, const ruddy::bdd_function&)
+  relnext(const ruddy::bdd_function& states,
+          const ruddy::bdd_function& rel,
+          const ruddy::bdd_function& /*rel_support*/)
   {
-    throw std::logic_error("ruddy: variable renaming is not supported");
+    init_relprod();
+    const ruddy::bdd_function next =
+      (states & rel).exists(_vars_relnext.data(), _vars_relnext.size());
+    return (next & _biconditionals).exists(_vars_relprev.data(), _vars_relprev.size());
   }
 
+  /// \brief The predecessors of 'states' under 'rel', renaming each current variable of 'states'
+  ///        to its next one, in the same way as 'relnext', before the conjunction with 'rel' is
+  ///        quantified over the next variables.
+  ///
+  /// 'states' has no next variable, as the permutation of the CUDD adapter also assumes, so all
+  /// current variables are renamed at once.
   inline ruddy::bdd_function
-  relprev(const ruddy::bdd_function&, const ruddy::bdd_function&, const ruddy::bdd_function&)
+  relprev(const ruddy::bdd_function& states,
+          const ruddy::bdd_function& rel,
+          const ruddy::bdd_function& /*rel_support*/)
   {
-    throw std::logic_error("ruddy: variable renaming is not supported");
+    init_relprod();
+    const ruddy::bdd_function prev =
+      (states & _biconditionals).exists(_vars_relnext.data(), _vars_relnext.size());
+    return (prev & rel).exists(_vars_relprev.data(), _vars_relprev.size());
   }
 
   /// \brief The number of nodes reachable from f, both sinks included, as BuDDy's adapter counts
@@ -555,10 +583,26 @@ public:
     return res;
   }
 
+  /// \brief The cube of the values of the path of 'pickcube' on the variables of the cube c, false
+  ///        when f is false.
+  ///
+  /// The variables of c are those of its own path, which for a cube are all of its variables.  A
+  /// variable of c that the path of f does not test takes the value false, and the variables of
+  /// the path outside c are left out, as in CUDD's 'Cudd_bddPickOneMinterm'.
   inline ruddy::bdd_function
-  satone(const ruddy::bdd_function&, const ruddy::bdd_function&)
+  satone(const ruddy::bdd_function& f, const ruddy::bdd_function& c)
   {
-    throw std::logic_error("ruddy: a satisfying cube over a set of variables is not supported");
+    const std::vector<int8_t> path = pick_path(f);
+    if (path.empty()) { return bot(); }
+
+    const std::vector<int8_t> vars = pick_path(c);
+
+    ruddy::bdd_function res = top();
+    for (int x = static_cast<int>(vars.size()) - 1; 0 <= x; --x) {
+      if (vars[x] < 0) { continue; }
+      res = path[x] == 1 ? make_node(x, bot(), res) : make_node(x, res, bot());
+    }
+    return res;
   }
 
   /// \brief The literals of the first satisfying path of the library, by increasing variable.
@@ -626,11 +670,39 @@ public:
     return _manager.node_count();
   }
 
+  /// \brief Prints the number of nodes in the manager's table.
+  ///
+  /// The library collects garbage on its own and counts no collections, and the C interface has
+  /// no other statistics, so the number of collections is not printed.
   void
   print_stats()
-  {}
+  {
+    std::cout << "\n"
+              << "Ruddy statistics:\n"
+              << "   Table:\n"
+              << "   | allocated nodes:     " << allocated_nodes() << "\n";
+  }
 
 private:
+  /// \brief The quantified variables of 'relnext' and 'relprev' and the conjunction of the
+  ///        biconditionals 'x <-> x + 1' of the current variables 'x' and their next ones, built on
+  ///        the first call and kept, as the other adapters keep their cube and permutation.
+  inline void
+  init_relprod()
+  {
+    if (!_biconditionals.is_invalid()) { return; }
+
+    for (int x = 0; x < _varcount; ++x) {
+      (x % 2 == 0 ? _vars_relnext : _vars_relprev).push_back(x);
+    }
+
+    ruddy::bdd_function res = top();
+    for (int x = (_varcount & ~1) - 2; 0 <= x; x -= 2) {
+      res = make_node(x, make_node(x + 1, res, bot()), make_node(x + 1, bot(), res));
+    }
+    _biconditionals = std::move(res);
+  }
+
   inline ruddy::bdd_function
   make_node(const uint32_t label, const ruddy::bdd_function& low, const ruddy::bdd_function& high)
   {

@@ -640,8 +640,9 @@ public:
   ///
   /// Each node of RSDD is drawn once, labelled with its variable, and stands for the function of
   /// the first pointer to it that the traversal meets. An edge to it from a pointer to its
-  /// complement ends in a circle; the low edges are dashed. Since RSDD has two terminals, which
-  /// are not complements of each other, the edges into them are never complemented.
+  /// complement ends in a circle; the low edges are dashed. RSDD has no terminal node, and true
+  /// and false are two pointer values of their own, which negation exchanges, so an edge into a
+  /// constant is drawn to the box of that constant and never ends in a circle.
   void
   print_dot(const dd_t& f, const std::string& filename)
   {
