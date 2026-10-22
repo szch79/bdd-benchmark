@@ -16,27 +16,27 @@ count in its leading comments.
 | *cancer-noevidence.cnf*     | none                        |        30 |      74 | 1                    |
 | *survey-query.cnf*          | Pr(T = car)                 |        51 |     147 | 0.561833976          |
 | *survey-noevidence.cnf*     | none                        |        51 |     146 | 1                    |
-| *alarm-query.cnf*           | Pr(PRESS = ZERO)            |       852 |   3,429 | 0.02721445340856...  |
-| *alarm-noevidence.cnf*      | none                        |       852 |   3,428 | 0.99999999377675...  |
-| *insurance-query.cnf*       | Pr(PropCost = Thousand)     |     1,206 |   5,422 | 0.56294559080...     |
-| *insurance-noevidence.cnf*  | none                        |     1,206 |   5,421 | 0.99999999999...     |
-| *hepar2-query.cnf*          | Pr(itching = present)       |     2,301 |  13,512 | 0.42420902690...     |
-| *hepar2-noevidence.cnf*     | none                        |     2,301 |  13,511 | 1.00000001820...     |
+| *alarm-query.cnf*           | Pr(PRESS = ZERO)            |       852 |   3,429 | 0.02721445340...     |
+| *alarm-noevidence.cnf*      | none                        |       852 |   3,428 | 0.99999999377...     |
+| *insurance-query.cnf*       | Pr(PropCost = Thousand)     |     1,206 |   5,422 | 0.56294559088...     |
+| *insurance-noevidence.cnf*  | none                        |     1,206 |   5,421 | 0.99999999997...     |
+| *hepar2-query.cnf*          | Pr(itching = present)       |     2,301 |  13,512 | 0.42420902698...     |
+| *hepar2-noevidence.cnf*     | none                        |     2,301 |  13,511 | 1.00000001824...     |
 | *hailfinder-query.cnf*      | Pr(R5Fcst = XNIL)           |     3,463 |  16,777 | 0.25206480542...     |
 | *hailfinder-noevidence.cnf* | none                        |     3,463 |  16,776 | 1                    |
 | *pigs-query.cnf*            | Pr(p392115290 = 0)          |     6,198 |  23,947 | 0.25                 |
 | *pigs-noevidence.cnf*       | none                        |     6,198 |  23,946 | 1                    |
-| *water-query.cnf*           | Pr(CBODD_12_45 = 15_MG_L)   |     6,630 |  49,368 | 0.02833044810...     |
+| *water-query.cnf*           | Pr(CBODD_12_45 = 15_MG_L)   |     6,630 |  49,368 | 0.02833044812...     |
 | *water-noevidence.cnf*      | none                        |     6,630 |  49,367 | 0.9999999            |
-| *munin-query.cnf*           | Pr(L_SUR_CV_CA = M_S00)     |    49,107 | 248,786 | 0.00871636180...     |
-| *munin-noevidence.cnf*      | none                        |    49,107 | 248,785 | 0.99999972260...     |
+| *munin-query.cnf*           | Pr(L_SUR_CV_CA = M_S00)     |    49,107 | 248,786 | 0.00871636188...     |
+| *munin-noevidence.cnf*      | none                        |    49,107 | 248,785 | 0.99999972266...     |
 
 The counts are exact. They are finite decimals, since the tables of the networks hold decimals,
-and the comment `c expected wmc` of each file gives all the digits (up to 2,124 for *munin*). The
-generator computes them by variable elimination over the tables, in exact arithmetic, and the
-brute-force count over the small CNFs agrees. The counts without evidence differ from 1 where
-rows of the tables do not sum to 1 in the source, as in *alarm*, *insurance*, *hepar2*, *water*
-and *munin*.
+and the comment `c expected wmc` of each file gives all the digits (up to 2,122 decimal places for
+*munin*). The generator computes them by variable elimination over the tables, in exact
+arithmetic, and the brute-force count over the small CNFs agrees. The counts without evidence
+differ from 1 where rows of the tables do not sum to 1 in the source, as in *alarm*, *insurance*,
+*hepar2*, *water* and *munin*.
 
 ## Encoding
 
@@ -57,7 +57,8 @@ value.
 
 The variables are numbered node by node in a topological order of the network. The comment lines
 holding a single number give the variable order, from the top of the decision diagram down, as
-in [benchmarks/cnf](../cnf).
+in [benchmarks/cnf](../cnf). The generator writes no such lines, which were added to its
+output afterwards.
 
 ## Weights
 

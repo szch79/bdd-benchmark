@@ -137,13 +137,21 @@ packages.
 - [**RSDD**](https://github.com/neuppl/rsdd):
 
   A library of binary and sentential decision diagrams. Its BDDs have complement
-  edges and depth-first algorithms over a unique node table, with the apply
-  cache that its C interface exposes, which keeps every result, and no garbage
-  collection. The interface has no quantification, so the adapter quantifies
-  and renames one variable at a time through its single-variable composition.
-  It has no count of the allocated nodes, which *Picotrav* prints as `null`, and
-  no export of BDDs. RSDD counts weighted models in `f64`. It bounds no table,
-  so `-M` has no effect.
+  edges and depth-first algorithms over a unique node table, without garbage
+  collection, as in Aytdd. Its memory differs from Aytdd's in its cache and in
+  its nodes. The apply cache that its C interface exposes is a hash map that
+  keeps the result of every if-then-else computed, in an entry of 64 bytes. A
+  node takes 112 bytes, of which its variable and its two children take 40 and
+  a scratch field for traversals and a cached semantic hash the other 72
+  (`BddNode` in `src/repr/bdd.rs` of the crate), and it is found through a slot
+  of 24 bytes in the hash-consing table, which doubles once it is 70 percent
+  full (`src/backing_store/bump_table.rs`). Once the table has outgrown its
+  initial 131,072 slots, a node thus takes between 146 and 181 bytes, against
+  roughly 24 bytes for a node of Aytdd. The interface has no quantification, so
+  the adapter quantifies and renames one variable at a time through its
+  single-variable composition. It has no count of the allocated nodes, which
+  *Picotrav* prints as `null`, and no export of BDDs. RSDD counts weighted
+  models in `f64`. It bounds no table, so `-M` has no effect.
 
   We use the C interface in its crate, built with the feature `ffi`.
 
@@ -189,22 +197,22 @@ packages.
   grows the table up to the nodes that fit into `-M`.
 
 
-|                    | **Adiar** | **Aytdd** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **RSDD** | **Ruddy** | **SimpleABC** | **Sylvan** |
-|--------------------|-----------|-----------|-----------|---------|----------|------------|-----------|----------|-----------|---------------|------------|
-| **Language**       | C++       | Lean      | C         | C       | C        | Rust       | Rust      | Rust     | Rust      | C             | C          |
-|                    |           |           |           |         |          |            |           |          |           |               |            |
-| **BDD**            | ✓         |           | ✓         |         | (✓)      | ✓          | ✓         |          | ✓         |               | (✓)        |
-| **BCDD**           |           | ✓         |           | ✓       | ✓        |            | ✓         | ✓        |           | ✓             | ✓          |
-| **MTBDD**          |           |           |           |         | ✓        |            | ✓         |          |           |               | ✓          |
-| **ZDD**            | ✓         |           |           |         | ✓        |            | ✓         |          |           |               | ✓          |
-|                    |           |           |           |         |          |            |           |          |           |               |            |
-| **Thread Safe**    |           |           |           |         |          | ✓          | ✓         |          |           |               | ✓          |
-| **Multi-threaded** |           |           |           |         |          |            | ✓         |          |           |               | ✓          |
-|                    |           |           |           |         |          |            |           |          |           |               |            |
-| **Reordering**     |           |           | ✓         | ✓       | ✓        |            | (✓)       |          |           | (✓)           | (✓)        |
-|                    |           |           |           |         |          |            |           |          |           |               |            |
-| **Shared Nodes**   |           | ✓         | ✓         | ✓       | ✓        |            | ✓         | ✓        | ✓         | ✓             | ✓          |
-| **Ext. Memory**    | ✓         |           |           | ✓       |          |            |           |          |           |               |            |
+|                    | **Adiar** | **Aytdd** | **BuDDy** | **CAL** | **CUDD** | **LibBDD** | **OxiDD** | **RSDD** | **Ruddy** | **SimpleABC** | **Sylvan** | **TBUDDY** |
+|--------------------|-----------|-----------|-----------|---------|----------|------------|-----------|----------|-----------|---------------|------------|------------|
+| **Language**       | C++       | Lean      | C         | C       | C        | Rust       | Rust      | Rust     | Rust      | C             | C          | C          |
+|                    |           |           |           |         |          |            |           |          |           |               |            |            |
+| **BDD**            | ✓         |           | ✓         |         | (✓)      | ✓          | ✓         |          | ✓         |               | (✓)        | ✓          |
+| **BCDD**           |           | ✓         |           | ✓       | ✓        |            | ✓         | ✓        |           | ✓             | ✓          |            |
+| **MTBDD**          |           |           |           |         | ✓        |            | ✓         |          |           |               | ✓          |            |
+| **ZDD**            | ✓         |           |           |         | ✓        |            | ✓         |          |           |               | ✓          |            |
+|                    |           |           |           |         |          |            |           |          |           |               |            |            |
+| **Thread Safe**    |           |           |           |         |          | ✓          | ✓         |          |           |               | ✓          |            |
+| **Multi-threaded** |           |           |           |         |          |            | ✓         |          |           |               | ✓          |            |
+|                    |           |           |           |         |          |            |           |          |           |               |            |            |
+| **Reordering**     |           |           | ✓         | ✓       | ✓        |            | (✓)       |          |           | (✓)           | (✓)        |            |
+|                    |           |           |           |         |          |            |           |          |           |               |            |            |
+| **Shared Nodes**   |           | ✓         | ✓         | ✓       | ✓        |            | ✓         | ✓        | ✓         | ✓             | ✓          | ✓          |
+| **Ext. Memory**    | ✓         |           |           | ✓       |          |            |           |          |           |               |            |            |
 
 
 We hope to extend the number of packages. See [issue
@@ -372,6 +380,12 @@ Features of the benchmarks and BDD packages can also be turned on and off as fol
 
   If `ON`, pause before deinitialising the BDD package and exiting. This can be
   used to investigate its state with external tools, e.g., use of Hugepages.
+
+- **`-D MCNET=<OFF|ON>`** (default: *ON*)
+
+  If `OFF`, the *McNet* benchmark is not built. It is the only benchmark that
+  needs the *Boost Library*, which Adiar needs as well, so that a build without
+  Boost also needs `-D ADIAR=OFF`.
 
 After configuring, you can build the benchmarks:
 ```bash

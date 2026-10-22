@@ -26,6 +26,22 @@ could span more than one line or multiple clauses could be given on one line.
 The CNF here is (¬x<sub>1</sub> ∨ x<sub>2</sub>) ∧ (¬x<sub>2</sub> ∨ x<sub>1</sub>) ∧ x<sub>3</sub>.
 
 
+## Circuits
+
+The files *c8.cnf*, *count.cnf*, *s298.cnf* and *s641.cnf* encode benchmark
+circuits as CNFs, *s298* and *s641* from the ISCAS-89 set, with a variable order
+added in comment lines as above. *s298.cnf* also keeps a description of its
+circuit in its leading comment lines, its name, the numbers of its inputs,
+outputs and gates, and the names of its signals.
+
+| File         | Variables | Clauses |
+|--------------|----------:|--------:|
+| *c8.cnf*     |       227 |     713 |
+| *count.cnf*  |       185 |     425 |
+| *s298.cnf*   |       136 |     363 |
+| *s641.cnf*   |       433 |     918 |
+
+
 ## More Inputs
 
 - http://www.cril.univ-artois.fr/kc/benchmarks.html
