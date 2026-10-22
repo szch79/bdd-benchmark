@@ -285,7 +285,7 @@ public:
     return c == 0 ? 1 : c + 2;
   }
 
-  /// Not certified, and rejected by the benchmark; present for compilation.
+  /// BuDDy's count over the CNF variables, which the proof does not certify
   inline uint64_t
   satcount(const dd_t& f)
   {

@@ -88,8 +88,8 @@ public:
   //
   // A package whose operations generate a clausal proof, TBUDDY, writes it to
   // the path given by `-p`. Its operations prove that the input clauses imply
-  // each intermediate result, so a false result comes with a refutation, while
-  // a model count is not certified and `-c` is rejected for it.
+  // each intermediate result, so a false result comes with a refutation. The
+  // count of `-c` is the package's own and is not certified by the proof.
   //
   // The option `-q wmc` counts the weighted models of the conjunction under the
   // weights of the literals that the file gives in the format of the model
@@ -1103,10 +1103,6 @@ run_cnf(int argc, char** argv)
   }
   if (!proving && !proof_file.empty()) {
     std::cerr << "This package does not generate a proof\n";
-    return -1;
-  }
-  if (proving && (satcount || counting)) {
-    std::cerr << "The proof does not certify a model count\n";
     return -1;
   }
   constexpr bool counts_exact  = has_wmc_rat<Adapter>::value;

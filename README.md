@@ -537,7 +537,7 @@ The benchmark can be configured with the following options:
   which is the weighted model count only if every variable that a path to true
   skips has weights summing to one, as on the files of
   [benchmarks/wmc](benchmarks/wmc). Every other package exits with status 3. The
-  option `-q` is rejected together with `-s` and `-b`, for TBUDDY, and on a file
+  option `-q` is rejected together with `-s` and `-b`, and on a file
   without the line `c t wmc`.
 
   ```bash
@@ -570,8 +570,9 @@ The benchmark can be configured with the following options:
   Write the proof of unsatisfiability to the given file in the LRAT format. It
   is required for TBUDDY and rejected for every other package. A false result
   comes with a refutation of the CNF, which the checker `lrat-check` of the
-  TBUDDY artifact verifies; the option `-c` is rejected with it, since the proof
-  certifies no model count.
+  TBUDDY artifact verifies. The count of `-c` is that of BuDDy,
+  `bdd_satcountset` over the variables of the CNF, and the proof does not
+  certify it.
 
   ```bash
   ./build/src/tbuddy_cnf_bdd -f benchmarks/cnf-bucket/urquhart-li-03.cnf -b -p urquhart-li-03.lrat
