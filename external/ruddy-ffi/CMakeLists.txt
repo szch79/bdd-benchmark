@@ -57,12 +57,13 @@ add_custom_command(
 # Custom target such that targets in other directories can depend on the header
 add_custom_target(ruddy-ffi-header ALL DEPENDS ${ruddy_h})
 
-# Import the ruddy-ffi crate specifically
+# Import the ruddy-ffi crate specifically, with Cargo held to the lock file next to this file
 corrosion_import_crate(
     MANIFEST_PATH Cargo.toml
     PROFILE ${RUDDY_CARGO_PROFILE}
     CRATES ruddy-ffi
-    CRATE_TYPES cdylib staticlib)
+    CRATE_TYPES cdylib staticlib
+    LOCKED)
 add_dependencies(ruddy_ffi ruddy-ffi-header)
 target_include_directories(ruddy_ffi INTERFACE ${ruddy_include})
 

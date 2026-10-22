@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
 
+# The objects of the Aytdd archive are compiled for macOS 15.0, and every executable targets the
+# same version unless the build sets another. The deployment target must be set before the first
+# `project()`, which initialises the toolchain with it.
+if (CMAKE_HOST_APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0" CACHE STRING "Minimum macOS version" FORCE)
+endif()
+
 project (bdd_benchmarks
   VERSION 1
   DESCRIPTION "A collection of comparable BDD Benchmarks"
@@ -47,18 +54,9 @@ message(STATUS "")
 
 # ---------------------------------------------------------------------------- #
 # GMP, the exact weights and counts of the CNF benchmark
-find_path(GMP_INCLUDE_DIR gmp.h PATHS /opt/homebrew/include /usr/local/include)
-find_library(GMP_LIBRARY gmp PATHS /opt/homebrew/lib /usr/local/lib)
-if (NOT GMP_INCLUDE_DIR OR NOT GMP_LIBRARY)
-  message(FATAL_ERROR "no GMP found; set GMP_INCLUDE_DIR to the directory of gmp.h and GMP_LIBRARY to the library")
-endif()
-
-add_library(GMP::GMP UNKNOWN IMPORTED)
-set_target_properties(GMP::GMP PROPERTIES
-  IMPORTED_LOCATION "${GMP_LIBRARY}"
-  INTERFACE_INCLUDE_DIRECTORIES "${GMP_INCLUDE_DIR}"
-)
-message(STATUS "  |  GMP library:       ${GMP_LIBRARY}")
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GMP REQUIRED IMPORTED_TARGET GLOBAL gmp)
+message(STATUS "  |  GMP library:       ${GMP_LINK_LIBRARIES}")
 
 # ---------------------------------------------------------------------------- #
 # BDD Packages

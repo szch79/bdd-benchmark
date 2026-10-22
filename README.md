@@ -244,12 +244,11 @@ installed with.
 apt install bison flex
 ```
 
-The *CNF* benchmark requires the *GMP Library*, which is looked up in the usual
-prefixes or given with `-D GMP_INCLUDE_DIR=<path>` and `-D GMP_LIBRARY=<path>`.
-On Ubuntu, it can be installed with
+The *CNF* benchmark requires the *GMP Library*, which is found through
+*pkg-config*. On Ubuntu, both can be installed with
 
 ```bash
-apt install libgmp-dev
+apt install libgmp-dev pkg-config
 ```
 
 The *McNet* benchmark requires the *Boost Library*. On Ubuntu, these can be
@@ -277,7 +276,7 @@ submodule, the archive is found automatically; otherwise, pass its path with
 `-D AYTDD_ROOT=<path>`. Its
 headers include *gmp.h* of the *GMP Library*, found as for the CNF benchmark.
 The archive carries the GMP of the Lean toolchain, so the Aytdd executables
-link that one rather than `GMP_LIBRARY`.
+link that one rather than the GMP that *pkg-config* finds.
 
 The default build of Aytdd stores its nodes in parent-local tries. A second
 build over its open-addressing node table is the package `aytdd_ot`, switched on

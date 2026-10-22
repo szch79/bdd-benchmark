@@ -7,8 +7,8 @@
 # of that checkout, AYTDD_ROOT defaults to it; otherwise point AYTDD_ROOT at the checkout.  The
 # archive carries the whole Lean closure and the glue; the link file beside it names the
 # remaining archives and the linker flags of the Lean runtime, one per line.  The headers of the
-# counts include gmp.h, which the Lean toolchain does not ship; GMP_INCLUDE_DIR names its directory
-# and defaults to the first of the usual prefixes that holds it, as in the lakefile.
+# counts include gmp.h, which the Lean toolchain does not ship, so they take its directory from the
+# GMP that the top-level file finds through pkg-config.
 
 set(AYTDD_ROOT "" CACHE PATH "Path to the Aytdd checkout providing libaytdd.a")
 
@@ -21,16 +21,6 @@ if (NOT AYTDD_ROOT)
 endif()
 
 set(AYTDD_INCLUDE "${AYTDD_ROOT}/capi/include")
-
-find_path(GMP_INCLUDE_DIR gmp.h PATHS /opt/homebrew/include /usr/local/include)
-
-if (NOT GMP_INCLUDE_DIR)
-  message(FATAL_ERROR "no gmp.h found; set GMP_INCLUDE_DIR to its directory")
-endif()
-
-if (APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0" CACHE STRING "Minimum macOS version" FORCE)
-endif()
 
 # Defines the imported target TARGET for the archive that the command COMMAND writes into the
 # build directory BUILD_DIR of the checkout, together with its link file.
@@ -48,7 +38,7 @@ function(aytdd_import TARGET BUILD_DIR COMMAND)
   add_library(${TARGET} STATIC IMPORTED GLOBAL)
   set_target_properties(${TARGET} PROPERTIES
     IMPORTED_LOCATION "${ARCHIVE}"
-    INTERFACE_INCLUDE_DIRECTORIES "${AYTDD_INCLUDE};${GMP_INCLUDE_DIR}"
+    INTERFACE_INCLUDE_DIRECTORIES "${AYTDD_INCLUDE};${GMP_INCLUDE_DIRS}"
     INTERFACE_LINK_LIBRARIES "${LINK_FLAGS}"
   )
 
