@@ -139,20 +139,40 @@ public:
     : _varcount(varcount)
   {
     // The package never reclaims nodes.  Its node table grows beyond the reservation made here at
-    // roughly 24 bytes per decision, while each computed table keeps a fixed number of 16-byte
-    // slots, rounded down to a power of two.  As in the BuDDy adapter, the conjunction and
-    // relational-product tables take one slot per 64 decisions each, and the less frequent
-    // exclusive-disjunction and if-then-else tables one per 256 each.  The node table takes the
-    // rest of '-M', at 24 + 16 * (2/64 + 2/256) = 197/8 bytes per decision.
+    // roughly 24 bytes per decision.  Each computed table starts at the size given here, 2^18
+    // 16-byte slots for the conjunction and relational-product tables and 2^16 for the
+    // exclusive-disjunction, if-then-else, composition and vector-composition tables, 12 MiB in
+    // all.  Before every operation, the package replaces a table of C slots by an empty one once
+    // the node table stores 64 * C decisions, with the least power of two above the stored
+    // decisions over 64 as its number of slots, so that a grown table holds one to two slots per
+    // 64 decisions.  The rest of '-M' is the reservation, at 24 + 16 * 6/64 = 51/2 bytes per
+    // decision with the six tables at one slot per 64 decisions.  A reservation of decisions is not
+    // a memory ceiling, since the tables beyond one slot per 64 decisions, spare buffer capacity,
+    // the old and the new buffer during a growth, the recursion and the counting are outside it.
+    //
+    // The reservation costs memory only as decisions are stored in the parent trie, but the open
+    // table also derives from it an index of 8-byte slots, written when the manager is created.
+    // The build over the open table therefore reserves nothing and starts at the package's
+    // default capacity, from which the table and its index grow with the stored decisions.
+    constexpr size_t large_cache = size_t{ 1 } << 18;
+    constexpr size_t small_cache = size_t{ 1 } << 16;
+    constexpr size_t cache_bytes = 16 * (2 * large_cache + 4 * small_cache);
+#ifdef AYTDD_OPEN_TABLE_BUILD
+    const size_t nodes = 0;
+#else
     const size_t bytes = static_cast<size_t>(M) * 1024 * 1024;
-    const size_t nodes = bytes * 8 / 197;
+    const size_t nodes = bytes > cache_bytes ? (bytes - cache_bytes) * 2 / 51 : 0;
+#endif
     aytdd_bcdd_config config{};
-    config.node_table_size      = nodes;
-    config.and_cache_size       = nodes / 64;
-    config.xor_cache_size       = nodes / 256;
-    config.ite_cache_size       = nodes / 256;
-    config.and_exist_cache_size = nodes / 64;
-    aytdd::mgr                  = aytdd_bcdd_manager_new(&config);
+    config.node_table_size           = nodes;
+    config.and_cache_size            = large_cache;
+    config.xor_cache_size            = small_cache;
+    config.ite_cache_size            = small_cache;
+    config.and_exist_cache_size      = large_cache;
+    config.compose_cache_size        = small_cache;
+    config.vector_compose_cache_size = small_cache;
+    config.node_to_cache_ratio       = 64;
+    aytdd::mgr                       = aytdd_bcdd_manager_new(&config);
     if (aytdd::mgr == nullptr) { throw std::runtime_error("aytdd: could not create a manager"); }
   }
 
@@ -424,10 +444,23 @@ public:
     return aytdd_bcdd_sat_one(aytdd::mgr, f.f);
   }
 
+  /// \brief The cube of the values of the path of 'pickcube' on the variables of the cube c, false
+  ///        when f is false.
+  ///
+  /// The variables of c are those of its own path, which for a cube are all of its variables.  A
+  /// variable of c that the path of f does not test takes the value false, and the variables of
+  /// the path outside c are left out, as in CUDD's 'Cudd_bddPickOneMinterm'.
   inline aytdd::bcdd_function
-  satone(const aytdd::bcdd_function&, const aytdd::bcdd_function&)
+  satone(const aytdd::bcdd_function& f, const aytdd::bcdd_function& c)
   {
-    throw std::logic_error("aytdd: a satisfying cube over a set of variables is not supported");
+    if (aytdd_bcdd_is_bot(f.f)) { return bot(); }
+
+    std::vector<char> value(_varcount, '0');
+    for (const auto& [x, v] : pickcube(f)) { value.at(x) = v; }
+
+    std::vector<aytdd_literal> lits;
+    for (const auto& [x, v] : pickcube(c)) { lits.push_back({ x, value.at(x) == '1' }); }
+    return aytdd_bcdd_lit_cube(aytdd::mgr, lits.data(), lits.size());
   }
 
   /// \brief The literals of the path of 'satone', by increasing variable, none at a constant.
@@ -499,7 +532,15 @@ public:
     return aytdd_bcdd_allocated_nodes(aytdd::mgr);
   }
 
+  /// \brief Prints the number of decisions the manager holds.
+  ///
+  /// The package collects no garbage, and the C interface has no other statistics.
   void
   print_stats()
-  {}
+  {
+    std::cout << "\n"
+              << name << " statistics:\n"
+              << "   Table:\n"
+              << "   | allocated nodes:     " << allocated_nodes() << "\n";
+  }
 };

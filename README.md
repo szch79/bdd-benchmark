@@ -76,8 +76,9 @@ packages.
 
   An implementation of shared BDDs with complement edges in Lean 4, with
   depth-first algorithms using a unique node table and memoization. Nodes are
-  never reclaimed. It counts weighted models exactly, over the rationals, and in
-  double precision.
+  never reclaimed. Its computed tables start at the sizes the adapter sets and
+  grow with the number of stored decisions. It counts weighted models exactly,
+  over the rationals, and in double precision.
 
   We use its C interface, which is built in the Aytdd repository.
 
@@ -462,12 +463,12 @@ which exit status.
 
 | **Package**   | **Node table**                                                                                       | **Caches**                                                                             | **Stops at `-M`**                      | **Message and exit status**                                                   |
 |---------------|------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------------|-------------------------------------------------------------------------------|
-| **Aytdd**     | initial capacity from `-M`, past which it grows                                                      | fixed from `-M`                                                                        | no, the table holds 2^31 - 1 decisions | a Lean panic `the node table has overflowed`, 1                               |
-| **aytdd_ot**  | as Aytdd                                                                                             | as Aytdd                                                                               | as Aytdd                               | as Aytdd                                                                      |
+| **Aytdd**     | initial capacity from `-M`, past which it grows                                                      | grow from 2^18 and 2^16 slots whenever the stored decisions reach 64 per slot          | no, the table holds 2^31 - 1 decisions | a Lean panic `the node table has overflowed`, 1                               |
+| **aytdd_ot**  | starts at the default of 8 decisions, with an index of 8-byte slots, and both grow, `-M` unused      | as Aytdd                                                                               | as Aytdd                               | as Aytdd                                                                      |
 | **BuDDy**     | fixed from `-M`                                                                                      | fixed from `-M`, six caches                                                            | yes                                    | `BDD error: Number of nodes reached user defined maximum`, 4                  |
 | **CUDD**      | grows from a small start, `-M` sets how readily it collects garbage instead of growing               | grow with the hit rate, up to a third of `-M`                                          | no                                     | none                                                                          |
 | **LibBDD**    | none shared, `-M` bounds the nodes of all live BDDs after each operation                             | local to each operation                                                                | yes, between operations                | `Too many nodes (n > m)`, 134 (abort)                                         |
-| **OxiDD**     | fixed from `-M`                                                                                      | fixed from `-M`                                                                        | yes                                    | a Rust panic `the given function is invalid: OutOfMemory`, 134 (abort)        |
+| **OxiDD**     | a store of fixed capacity from `-M`, written as nodes are created, and unique tables that grow       | fixed from `-M`, one entry per 64 nodes, written at start                              | yes                                    | a Rust panic `the given function is invalid: OutOfMemory`, 134 (abort)        |
 | **RSDD**      | grows without bound                                                                                  | grow without bound                                                                     | no                                     | none                                                                          |
 | **Ruddy**     | grows, the C interface bounds it by `-M` after each operation                                        | local to each operation                                                                | yes, between operations                | `ruddy: the node table needs n slots, more than the budget of m`, 134 (abort) |
 | **SimpleABC** | fixed from `-M`                                                                                      | fixed from `-M`, a cache of conjunctions                                               | yes                                    | `simpleabc: out of memory, the node table is full`, 4                         |
@@ -487,9 +488,16 @@ compositions, which are allocated only by a composition; a `-M`
 that gives fewer slots than the variables plus one is reported by the adapter,
 with exit status 1. TBUDDY counts 31 bytes per node, a node of 28 bytes and an
 eighth of a cache entry of 24, and a `-M` below its initial table is reported by
-the adapter, with exit status 1. Aytdd, whose table grows past `-M`, CUDD, which
-takes `-M` as a target rather than a limit, and RSDD, which has no setting for
-it, go on until the cap of the run.
+the adapter, with exit status 1. The Aytdd adapter reserves room for the
+decisions that fit into `-M` less the 12 MiB of the initial slots of the
+computed tables, at 51/2 bytes per decision, 24 for the decision itself and 16
+for one slot in each of the six computed tables per 64 decisions, the size at
+which a table grows. A table that has grown holds up to two slots per 64
+decisions. The adapter of `aytdd_ot` reserves nothing, since the open table also
+derives from the reservation an index of 8-byte slots that is written at start,
+so that `-M` sizes only its computed tables. Aytdd, whose node table and
+computed tables grow past `-M`, CUDD, which takes `-M` as a target rather than a
+limit, and RSDD, which has no setting for it, go on until the cap of the run.
 
 ## Benchmarks
 
