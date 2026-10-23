@@ -270,11 +270,11 @@ apt install libboost-all-dev
 
 **Aytdd**
 
-Aytdd is a Lean library, which this CMake project does not build, so the package
-is off by default and switched on with `-D AYTDD=ON`. Build its archive with
-`lake build libaytdd` in the Aytdd repository. When this repository is its
-submodule, the archive is found automatically; otherwise, pass its path with
-`-D AYTDD_ROOT=<path>`. Its
+Aytdd is a Lean library, so the package is off by default and switched on with
+`-D AYTDD=ON`. Configuring then builds its archive with `lake -R build libaytdd`
+in the Aytdd repository, with the *lake* found on the path or the one passed with
+`-D LAKE=<path>`. When this repository is its submodule, the Aytdd repository is
+found automatically; otherwise, pass its path with `-D AYTDD_ROOT=<path>`. Its
 headers include *gmp.h* of the *GMP Library*, found as for the CNF benchmark.
 The archive carries the GMP of the Lean toolchain, so the Aytdd executables
 link that one rather than the GMP that *pkg-config* finds.
@@ -283,7 +283,8 @@ The default build of Aytdd stores its nodes in parent-local tries. A second
 build over its open-addressing node table is the package `aytdd_ot`, switched on
 with `-D AYTDD_OPEN_TABLE=ON`. Its archive is built with
 `lake -R -KnodeTable=openTable build libaytdd`, into a build directory of its
-own, and `lake -R build` returns the repository to its default build.
+own, before the default build, which returns the repository to its default
+configuration.
 
 **LibBDD**, **OxiDD**, **RSDD** and **Ruddy**
 
