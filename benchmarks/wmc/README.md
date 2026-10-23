@@ -12,24 +12,24 @@ count in its leading comments.
 
 | File                        | Query                       | Variables | Clauses | Weighted model count |
 |-----------------------------|-----------------------------|----------:|--------:|----------------------|
-| *cancer-query.cnf*          | Pr(Xray = positive)         |        30 |      75 | 0.208141             |
-| *cancer-noevidence.cnf*     | none                        |        30 |      74 | 1                    |
-| *survey-query.cnf*          | Pr(T = car)                 |        51 |     147 | 0.561833976          |
-| *survey-noevidence.cnf*     | none                        |        51 |     146 | 1                    |
-| *alarm-query.cnf*           | Pr(PRESS = ZERO)            |       852 |   3,429 | 0.02721445340...     |
-| *alarm-noevidence.cnf*      | none                        |       852 |   3,428 | 0.99999999377...     |
-| *insurance-query.cnf*       | Pr(PropCost = Thousand)     |     1,206 |   5,422 | 0.56294559088...     |
-| *insurance-noevidence.cnf*  | none                        |     1,206 |   5,421 | 0.99999999997...     |
-| *hepar2-query.cnf*          | Pr(itching = present)       |     2,301 |  13,512 | 0.42420902698...     |
-| *hepar2-noevidence.cnf*     | none                        |     2,301 |  13,511 | 1.00000001824...     |
-| *hailfinder-query.cnf*      | Pr(R5Fcst = XNIL)           |     3,463 |  16,777 | 0.25206480542...     |
-| *hailfinder-noevidence.cnf* | none                        |     3,463 |  16,776 | 1                    |
-| *pigs-query.cnf*            | Pr(p392115290 = 0)          |     6,198 |  23,947 | 0.25                 |
-| *pigs-noevidence.cnf*       | none                        |     6,198 |  23,946 | 1                    |
-| *water-query.cnf*           | Pr(CBODD_12_45 = 15_MG_L)   |     6,630 |  49,368 | 0.02833044812...     |
-| *water-noevidence.cnf*      | none                        |     6,630 |  49,367 | 0.9999999            |
-| *munin-query.cnf*           | Pr(L_SUR_CV_CA = M_S00)     |    49,107 | 248,786 | 0.00871636188...     |
-| *munin-noevidence.cnf*      | none                        |    49,107 | 248,785 | 0.99999972266...     |
+| *cancer-query.cnf*          | Pr(Xray = positive)         |        30 |      31 | 0.208141             |
+| *cancer-noevidence.cnf*     | none                        |        30 |      30 | 1                    |
+| *survey-query.cnf*          | Pr(T = car)                 |        51 |      54 | 0.561833976          |
+| *survey-noevidence.cnf*     | none                        |        51 |      53 | 1                    |
+| *alarm-query.cnf*           | Pr(PRESS = ZERO)            |       850 |     894 | 0.02721445340...     |
+| *alarm-noevidence.cnf*      | none                        |       850 |     893 | 0.99999999377...     |
+| *insurance-query.cnf*       | Pr(PropCost = Thousand)     |     1,136 |   1,492 | 0.56294559088...     |
+| *insurance-noevidence.cnf*  | none                        |     1,136 |   1,491 | 0.99999999997...     |
+| *hepar2-query.cnf*          | Pr(itching = present)       |     2,301 |   2,330 | 0.42420902698...     |
+| *hepar2-noevidence.cnf*     | none                        |     2,301 |   2,329 | 1.00000001824...     |
+| *hailfinder-query.cnf*      | Pr(R5Fcst = XNIL)           |     3,377 |   4,126 | 0.25206480542...     |
+| *hailfinder-noevidence.cnf* | none                        |     3,377 |   4,125 | 1                    |
+| *pigs-query.cnf*            | Pr(p392115290 = 0)          |     5,014 |   9,008 | 0.25                 |
+| *pigs-noevidence.cnf*       | none                        |     5,014 |   9,007 | 1                    |
+| *water-query.cnf*           | Pr(CBODD_12_45 = 15_MG_L)   |     6,312 |  13,355 | 0.02833044812...     |
+| *water-noevidence.cnf*      | none                        |     6,312 |  13,354 | 0.9999999            |
+| *munin-query.cnf*           | Pr(L_SUR_CV_CA = M_S00)     |    40,962 | 110,711 | 0.00871636188...     |
+| *munin-noevidence.cnf*      | none                        |    40,962 | 110,710 | 0.99999972266...     |
 
 The counts are exact. They are finite decimals, since the tables of the networks hold decimals,
 and the comment `c expected wmc` of each file gives all the digits (up to 2,122 decimal places for
@@ -40,20 +40,25 @@ differ from 1 where rows of the tables do not sum to 1 in the source, as in *ala
 
 ## Encoding
 
-The encoding is ENC1 of
+Every value of every network variable has an indicator variable, constrained by an at-least-one
+clause and pairwise at-most-one clauses. Every entry `Pr(x | u)` of a conditional probability
+table strictly between 0 and 1 has a parameter variable implied by the conjunction of the
+indicators of `x` and of the parent values `u`, written as the single clause of this
+implication. An entry equal to 0 instead gets the clause that excludes the conjunction, and an
+entry equal to 1 gets neither a variable nor a clause. A parameter variable has the weight
+`Pr(x | u)` and its negation the weight `1 - Pr(x | u)`, and both literals of every indicator
+have the weight 1. The clause form is that of ENC3 of
 
 > Mark Chavira and Adnan Darwiche. "On probabilistic inference by weighted model counting". In:
 > *Artificial Intelligence* 172 (6-7). 2008
 
-(section 3.1). Every value of every network variable has an indicator variable, constrained by
-an at-least-one clause and pairwise at-most-one clauses. Every nonzero entry `Pr(x | u)` of a
-conditional probability table has a parameter variable that is equivalent to the conjunction of
-the indicators of `x` and of the parent values `u`. An entry equal to 0 instead gets the clause
-that excludes this conjunction. A parameter variable has the weight `Pr(x | u)`, its negation
-and both literals of every indicator the weight 1. The weighted model count is then 1 when every
-row of every table sums to 1, as in the files without evidence, and a query file adds the unit
-clause of the indicator of the queried value, whose count is the marginal probability of that
-value.
+(section 5.1), and the weights follow the convention of the model counting competition, in which
+the two weights of a variable sum to 1 or are both 1. For an assignment of the indicators that
+selects one value of every network variable, the parameter variable of each selected entry is
+forced true and contributes its entry, and every other one is free and contributes the sum of its
+two weights, which is 1. The weighted model count is therefore 1 when every row of every table
+sums to 1, as in the files without evidence, and a query file adds the unit clause of the
+indicator of the queried value, whose count is the marginal probability of that value.
 
 The variables are numbered node by node in a topological order of the network. The comment lines
 holding a single number give the variable order, from the top of the decision diagram down, as
@@ -69,9 +74,14 @@ an optional exponent. These lines may come before or after the line `p cnf`, and
 without one has the weight 1. The line `c expected wmc V` gives the expected count `V`, a decimal
 of the same form, with which the benchmark compares its count. The benchmark reads each weight
 exactly as a rational, and as the `double` nearest to it for the packages that count in double
-precision. These files give both literals of every variable a weight, after the clauses.
+precision. These files give both literals of every variable a weight, after the clauses, and
+write every weight as a plain decimal, without an exponent. One entry of *insurance*, 4.999825e-05
+in the network, and its complement need 11 decimals, beyond the nine of the competition's
+instances. Readers of arbitrary precision take them exactly, and a reader in double precision
+rounds them.
 
 The count of RSDD sums over the paths to true of a BDD the products of the weights of the
 literals on each path, so a variable that a path skips contributes the factor 1 rather than the
-sum of its two weights. On these files it is the weighted model count, since no path to true
-skips a variable.
+sum of its two weights. On these files it is the weighted model count. No path to true skips an
+indicator, since the at-least-one and at-most-one clauses of its network variable make it decide
+the path, and a path skips only free parameter variables, whose two weights sum to 1.
