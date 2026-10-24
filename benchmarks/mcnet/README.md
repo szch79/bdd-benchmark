@@ -74,6 +74,31 @@ Minimal (hand-crafted) examples of inputs.
 - *unreachable.3.pnml* : Net with trivially unreachable set of places
   (nothing is marked initial).
 
+## Sølvsten and van de Pol (2025)
+
+The folder *soelvsten2025/* holds the 75 models of the paper "Symbolic Model
+Checking in External Memory" by Steffan Christ Sølvsten and Jaco van de Pol
+([arXiv:2505.11229](https://arxiv.org/abs/2505.11229)), copied unchanged from
+the folder `inputs.mcnet` of the archive *ARTIFACT.zip* of its artifact
+"Artifact: Symbolic Model Checking in External Memory" on Zenodo
+([doi:10.5281/zenodo.14833492](https://doi.org/10.5281/zenodo.14833492), the
+version of 2025-03-11 being record 14996640). Zenodo lists the record under the
+licence CC-BY-4.0, and the artifact's own licence permits copying and
+distributing it with its copyright and permission notice, which
+*soelvsten2025/LICENSE.md* reproduces. The paper runs each model with both a joint and a disjoint
+transition relation under the Sloan variable order, which gives 150 runs.
+
+- *mcc/* : 16 Petri nets from the 2021 to 2023 Model Checking Contests.
+- *aeon/* : 41 Boolean networks distributed with AEON.
+- *bnet/* : 18 Boolean networks distributed with PyBoolNet.
+
+The Petri nets are *anderson_04.pnml*, *autocar01_a.pnml*, *autocar02_a.pnml*,
+*autocar03_a.pnml*, *autocar04_a.pnml*, *eisenberg-mcguire_03.pnml*,
+*eisenberg-mcguire_04.pnml*, *gpufp_04_a.pnml*, *gpufp_08_a.pnml*,
+*stigcomm02-a.pnml*, *stigcomm03-a.pnml*, *stigcomm05-a.pnml*,
+*stigcomm06-a.pnml*, *stigcomm07-a.pnml*, *stigelec02-a.pnml* and
+*stigelec06-a.pnml*.
+
 ## More Inputs
 
 ### Boolean Networks (*aeon*)
