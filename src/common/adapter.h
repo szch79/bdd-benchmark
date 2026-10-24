@@ -108,9 +108,14 @@ struct resource_usage
     os << json::brace_open << json::endl
        << json::field("stime (ms)") << json::value(stime) << json::comma << json::endl
        << json::field("utime (ms)") << json::value(utime) << json::comma << json::endl
-       << json::field("CPU (%)")
-       << json::value(self.elapsed_ms > 0 ? (stime + utime) * 100 / self.elapsed_ms : -1)
-       << json::comma << json::endl
+       << json::field("CPU (%)");
+    // A run that ends within the millisecond has no CPU share to report
+    if (self.elapsed_ms > 0) {
+      os << json::value((stime + utime) * 100 / self.elapsed_ms);
+    } else {
+      os << json::nil;
+    }
+    os << json::comma << json::endl
        << json::field("maximum resident set size (MiB)") << json::value(maxrss_mib)
        << json::comma << json::endl
        << json::field("minor page faults") << json::value(a.ru_minflt - b.ru_minflt) << json::comma
