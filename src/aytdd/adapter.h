@@ -143,12 +143,13 @@ public:
     // 16-byte slots for the conjunction and relational-product tables and 2^16 for the
     // exclusive-disjunction, if-then-else, composition and vector-composition tables, 12 MiB in
     // all.  Before every operation, the package replaces a table of C slots by an empty one once
-    // the node table stores 64 * C decisions, with the least power of two above the stored
-    // decisions over 64 as its number of slots, so that a grown table holds one to two slots per
-    // 64 decisions.  The rest of '-M' is the reservation, at 24 + 16 * 6/64 = 51/2 bytes per
-    // decision with the six tables at one slot per 64 decisions.  A reservation of decisions is not
-    // a memory ceiling, since the tables beyond one slot per 64 decisions, spare buffer capacity,
-    // the old and the new buffer during a growth, the recursion and the counting are outside it.
+    // the node table stores 128 * C decisions, with the least power of two above the stored
+    // decisions over 128 as its number of slots, so that a grown table holds one to two slots per
+    // 128 decisions.  The rest of '-M' is the reservation, at 24 + 16 * 6/128 = 99/4 bytes per
+    // decision with the six tables at one slot per 128 decisions, and at most the 2^31 - 1
+    // decisions the table can hold.  A reservation of decisions is not a memory ceiling, since the
+    // tables beyond one slot per 128 decisions, spare buffer capacity, the old and the new buffer
+    // during a growth, the recursion and the counting are outside it.
     //
     // The reservation costs memory only as decisions are stored in the parent trie, but the open
     // table also derives from it an index of 8-byte slots, written when the manager is created.
@@ -161,7 +162,9 @@ public:
     const size_t nodes = 0;
 #else
     const size_t bytes = static_cast<size_t>(M) * 1024 * 1024;
-    const size_t nodes = bytes > cache_bytes ? (bytes - cache_bytes) * 2 / 51 : 0;
+    const size_t fit   = bytes > cache_bytes ? (bytes - cache_bytes) * 4 / 99 : 0;
+    const size_t most  = (size_t{ 1 } << 31) - 1;
+    const size_t nodes = fit < most ? fit : most;
 #endif
     aytdd_bcdd_config config{};
     config.node_table_size           = nodes;
@@ -171,7 +174,7 @@ public:
     config.and_exist_cache_size      = large_cache;
     config.compose_cache_size        = small_cache;
     config.vector_compose_cache_size = small_cache;
-    config.node_to_cache_ratio       = 64;
+    config.node_to_cache_ratio       = 128;
     aytdd::mgr                       = aytdd_bcdd_manager_new(&config);
     if (aytdd::mgr == nullptr) { throw std::runtime_error("aytdd: could not create a manager"); }
   }

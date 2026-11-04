@@ -491,10 +491,11 @@ with exit status 1. TBUDDY counts 31 bytes per node, a node of 28 bytes and an
 eighth of a cache entry of 24, and a `-M` below its initial table is reported by
 the adapter, with exit status 1. The Aytdd adapter reserves room for the
 decisions that fit into `-M` less the 12 MiB of the initial slots of the
-computed tables, at 51/2 bytes per decision, 24 for the decision itself and 16
-for one slot in each of the six computed tables per 64 decisions, the size at
-which a table grows. A table that has grown holds up to two slots per 64
-decisions. The adapter of `aytdd_ot` reserves nothing, since the open table also
+computed tables, at 99/4 bytes per decision, 24 for the decision itself and 16
+for one slot in each of the six computed tables per 128 decisions, the size at
+which a table grows, and for at most the 2^31 - 1 decisions the table can hold.
+A table that has grown holds up to two slots per 128 decisions. The adapter of
+`aytdd_ot` reserves nothing, since the open table also
 derives from the reservation an index of 8-byte slots that is written at start,
 so that `-M` sizes only its computed tables. Aytdd, whose node table and
 computed tables grow past `-M`, CUDD, which takes `-M` as a target rather than a
