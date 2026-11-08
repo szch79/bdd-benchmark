@@ -41,6 +41,7 @@ std::string file;
 bool satcount = false;
 std::string schedule_file;
 bool bucket_elimination = false;
+bool left_deep = false;
 std::string proof_file;
 bool weighted_count = false;
 
@@ -48,12 +49,13 @@ class parsing_policy
 {
 public:
   static constexpr std::string_view name = "CNF";
-  static constexpr std::string_view args = "bf:cp:q:s:";
+  static constexpr std::string_view args = "bf:clp:q:s:";
 
   static constexpr std::string_view help_text =
     "        -b                    Conjoin and quantify by bucket elimination\n"
     "        -c                    Count satisfying assignments\n"
     "        -f PATH               Path to '.cnf'/'.dimacs' file\n"
+    "        -l                    Conjoin the clauses one at a time in file order\n"
     "        -p PATH               Write the proof of unsatisfiability to PATH (TBUDDY only)\n"
     "        -q wmc                Count the weighted models by the file's weights\n"
     "        -s PATH               Conjoin and quantify as the schedule file says";
@@ -86,6 +88,16 @@ public:
   // whether the CNF is satisfiable. With `-s`, a schedule file lists the
   // operations; with `-b`, bucket elimination orders them by the variable order.
   // Both read the variable order as fixed and are rejected with reordering.
+  //
+  // The option `-l` replaces the balanced conjunction by the left-deep one,
+  // `((c0 ∧ c1) ∧ c2) ∧ c3`, which conjoins the clauses one at a time into a
+  // single result in the order of the file, so that every intermediate result
+  // is the conjunction of a prefix of the clauses. The order of the clauses
+  // thus decides the formulas built on the way, e.g., the files of
+  // `benchmarks/wmc` list the clauses of a Bayesian network node by node,
+  // parents first, and the result after the clauses of each node encodes a
+  // sub-network closed under parents. Like the balanced conjunction, it does
+  // not commute any operands, and it is rejected together with `-s` and `-b`.
   //
   // A package whose operations generate a clausal proof, TBUDDY, writes it to
   // the path given by `-p`. Its operations prove that the input clauses imply
@@ -138,6 +150,10 @@ public:
     }
     case 'b': {
       bucket_elimination = true;
+      return false;
+    }
+    case 'l': {
+      left_deep = true;
       return false;
     }
     case 'p': {
@@ -934,6 +950,28 @@ conjoin(Adapter& adapter, const IT begin, const IT end)
   return res;
 }
 
+/// Conjoin the clauses one at a time into a single result in file order, i.e.,
+/// with the left-deep bracketing `((c0 ∧ c1) ∧ c2) ∧ c3`
+template <typename Adapter, typename IT>
+typename Adapter::dd_t
+conjoin_left_deep(Adapter& adapter, const IT begin, const IT end)
+{
+  if (begin == end) return adapter.top();
+
+  typename Adapter::dd_t res = *begin;
+  for (IT it = begin + 1; it != end; ++it) {
+    res = res & *it;
+
+#ifdef BDD_BENCHMARK_STATS
+    const size_t nodecount = adapter.nodecount(res);
+    largest_bdd            = std::max(largest_bdd, nodecount);
+    total_nodes += nodecount;
+#endif // BDD_BENCHMARK_STATS
+  }
+
+  return res;
+}
+
 // ========================================================================== //
 // Schedules and bucket elimination, after the SAT solver `tbsat` of TBUDDY
 // (https://github.com/rebryant/tbuddy-artifact, `src/tbsat/teval.cpp`)
@@ -1188,6 +1226,10 @@ run_cnf(int argc, char** argv)
     std::cerr << "A schedule and bucket elimination exclude each other\n";
     return -1;
   }
+  if (quantifying && left_deep) {
+    std::cerr << "The left-deep conjunction (-l) and a quantifying run exclude each other\n";
+    return -1;
+  }
   const bool counting = weighted_count;
   if (satcount && counting) {
     std::cerr << "The weighted count (-q wmc) and the count of satisfying assignments (-c) "
@@ -1310,9 +1352,11 @@ run_cnf(int argc, char** argv)
     if constexpr (!Adapter::needs_extend) {
       res = schedule ? ops.run_schedule(std::move(clauses), *schedule, cnf->var_to_level())
         : bucket_elimination ? ops.bucket_eliminate(std::move(clauses), cnf->var_to_level().size())
+        : left_deep          ? conjoin_left_deep(adapter, clauses.cbegin(), clauses.cend())
                              : conjoin(adapter, clauses.cbegin(), clauses.cend());
     } else {
-      res = conjoin(adapter, clauses.cbegin(), clauses.cend());
+      res = left_deep ? conjoin_left_deep(adapter, clauses.cbegin(), clauses.cend())
+                      : conjoin(adapter, clauses.cbegin(), clauses.cend());
     }
     const time_point t4 = now();
 
@@ -1331,6 +1375,10 @@ run_cnf(int argc, char** argv)
                 << json::endl;
       std::cout << json::field("quantifications") << json::value(ops.quantifications)
                 << json::comma << json::endl;
+    }
+    if (left_deep) {
+      const std::string_view method = "left-deep";
+      std::cout << json::field("method") << json::value(method) << json::comma << json::endl;
     }
     std::cout << json::field("final size (nodes)") << json::value(adapter.nodecount(res))
               << json::comma << json::endl;

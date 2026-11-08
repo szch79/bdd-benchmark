@@ -592,9 +592,26 @@ The benchmark can be configured with the following options:
   weight that is not zero but so small that its nearest `double` is zero is
   rejected, as is an expected count given twice. The option `-q` is rejected
   together with `-c`, `-s` and `-b`, and on a file without the line `c t wmc`.
+  The files of [benchmarks/wmc](benchmarks/wmc) are meant to be conjoined with
+  `-l`, since they list the clauses of a Bayesian network node by node, parents
+  first, so that the result after the clauses of each node encodes a
+  sub-network closed under parents.
 
   ```bash
-  ./build/src/aytdd_cnf_bcdd -f benchmarks/wmc/cancer-query.cnf -q wmc
+  ./build/src/aytdd_cnf_bcdd -f benchmarks/wmc/cancer-query.cnf -q wmc -l
+  ```
+
+- **`-l`**
+
+  Instead of the balanced conjunction, conjoin the clauses one at a time into a
+  single result in the order of the file, i.e., with the left-deep bracketing
+  (((c<sub>0</sub> c<sub>1</sub>) c<sub>2</sub>) c<sub>3</sub>), so that every
+  intermediate result is the conjunction of a prefix of the clauses. The block
+  `"apply"` then reports `"method": "left-deep"`. The option is supported with
+  `-c` and `-q` and for ZDDs.
+
+  ```bash
+  ./build/src/${LIB}_cnf_${KIND} -f benchmarks/cnf/sample.cnf -c -l
   ```
 
 - **`-s <path>`**
@@ -634,8 +651,9 @@ The benchmark can be configured with the following options:
 
 The options `-s` and `-b` exclude each other and are not supported for ZDDs.
 They are rejected together with `-c` and `-q`, since they decide satisfiability
-and count nothing, and together with dynamic variable reordering (`-R`), since
-both read the variable order as fixed.
+and count nothing, together with dynamic variable reordering (`-R`), since both
+read the variable order as fixed, and together with `-l`, since each replaces
+the balanced conjunction.
 
 
 ### Game Of Life
